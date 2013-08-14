@@ -1,0 +1,6 @@
+/ebin
+/deps
+erl_crash.dump
+*.ez
+src/ql2_pb.hrl
+lib/ql2.ex
