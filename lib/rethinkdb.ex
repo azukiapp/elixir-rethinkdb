@@ -3,6 +3,6 @@ defmodule Rethinkdb do
 
   def connect, do: connect([])
   def connect(opts) do
-    conn = Connection.new(opts)
+    Connection.new(opts)
   end
 end
