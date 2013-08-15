@@ -27,9 +27,16 @@ defmodule Rexthinkdb.Mixfile do
   # Returns the list of dependencies in the format:
   def deps(:prod) do
     [
+      { :meck, github: "eproxus/meck", branch: "develop", override: true },
       { :mix_protobuffs, "~> 0.9.0", git: "git://github.com/nuxlli/mix_protobuffs.git", branch: "fixing_use_mix_code_erlang"},
       { :protobuffs, "~> 0.8.0", git: "git://github.com/basho/erlang_protobuffs.git" },
       { :socket, github: "meh/elixir-socket" }
+    ]
+  end
+
+  def deps(:test) do
+    deps(:prod) ++ [
+      {:exmeck, github: "azukiapp/exmeck"},
     ]
   end
 
