@@ -1,5 +1,5 @@
 defmodule Rethinkdb.ConnectionTest do
-  use ExUnit.Case
+  use Rethinkdb.Case
   alias Rethinkdb.Connection
 
   test "check a default values for new connection" do
@@ -37,7 +37,7 @@ defmodule Rethinkdb.ConnectionTest do
     assert is_binary(msg)
   end
 
-  test ":connect sucess" do
+  test "connect and logs in" do
     {:ok, conn} = Connection.new.connect
     assert is_record(conn, Connection)
     assert is_record(conn.socket, Socket.TCP)
@@ -47,6 +47,27 @@ defmodule Rethinkdb.ConnectionTest do
     assert is_record(conn, Connection)
     assert is_record(conn.socket, Socket.TCP)
     assert is_tuple(conn.socket.local!)
+  end
+
+  test "connect and authenticate" do
+    conn = Connection.new("rethinkdb://auth_key@localhost")
+    Exmeck.mock_run do
+      mock.stubs(:connect, [:_, :_, :_], {:ok, mock.module})
+      mock.stubs(:send, [:_], :ok)
+      conn = conn.connect!(mock.module)
+
+      version  = :binary.encode_unsigned(0x723081e1, :little)
+      auth_key = "auth_key"
+      auth_key = [<<iolist_size(auth_key) :: [size(32), little]>>, auth_key]
+
+      args = [conn.host, conn.port, [
+        packet: :raw,
+        active: false
+      ]]
+      assert 1 = mock.num_calls(:connect, args)
+      assert 1 = mock.num_calls(:send, [version])
+      assert 1 = mock.num_calls(:send, [auth_key])
+    end
   end
 
   test ":connect fail" do

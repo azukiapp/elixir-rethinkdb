@@ -1,6 +1,8 @@
 defmodule Rethinkdb.Connection do
   alias Socket.TCP
 
+  @version :binary.encode_unsigned(0x723081e1, :little)
+
   defexception Error, msg: nil do
     def message(Error[msg: msg]) do
       msg
@@ -50,14 +52,18 @@ defmodule Rethinkdb.Connection do
   end
 
   @doc """
-    Create a TCP socket to the rethinkdb server and return
+    Create a TCP socket to the rethinkdb server, logs in and return
     a Connection record date with socket.
   """
   @spec connect(t) :: { :ok, t } | { :error, binary }
-  def connect(rconn() = conn) do
+  def connect(rconn() = conn), do: conn.connect(Socket.TCP)
+
+  @doc false
+  def connect(socket_mod, rconn(authKey: authKey) = conn) do
     unless conn.socket do
-      case TCP.connect conn.host, conn.port, packet: 0, active: false do
+      case socket_mod.connect conn.host, conn.port, packet: :raw, active: false do
         {:ok, socket} ->
+          :ok = authenticate(socket, authKey)
           {:ok, rconn(conn, socket: socket) }
         {:error, _ } ->
           { :error, "Could not connect to #{conn.host}:#{conn.port}" }
@@ -71,10 +77,21 @@ defmodule Rethinkdb.Connection do
     an error occurs.
   """
   @spec connect!(t) :: t | no_return
-  def connect!(rconn() = conn) do
-    case connect(conn) do
+  def connect!(rconn() = conn), do: conn.connect!(Socket.TCP)
+
+  @doc false
+  def connect!(socket_mod, rconn() = conn) do
+    case conn.connect(socket_mod) do
       { :ok, conn } -> conn
       { :error, msg } -> raise Error, msg: msg
     end
+  end
+
+  # Send a protocol version and authenticate keu
+  defp authenticate(socket, auth_key) do
+    :ok = socket.send(@version)
+
+    auth_key = [<<iolist_size(auth_key) :: [size(32), little]>>, auth_key]
+    socket.send(auth_key)
   end
 end
