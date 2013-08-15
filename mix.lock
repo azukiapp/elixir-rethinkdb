@@ -1,4 +1,5 @@
-[ "finalizer": {:git, "git://github.com/meh/elixir-finalizer.git", "9c38d9145824a46c66f1a010e137a953a6c78e04", []},
+[ "ex_doc": {:git, "git://github.com/elixir-lang/ex_doc.git", "81c74209a90ec5635c258e20e8767fb469262e8c", []},
+  "finalizer": {:git, "git://github.com/meh/elixir-finalizer.git", "9c38d9145824a46c66f1a010e137a953a6c78e04", []},
   "meck": {:git, "https://github.com/eproxus/meck", "161e240166a0d20e9ffa2be5d0bfa6a981f12aef", [{:branch, "master"}]},
   "mix_protobuffs": {:git, "git://github.com/nuxlli/mix_protobuffs.git", "74fbf1f3b7bfb4932294e6085151e80f7899a4cd", [{:branch, "fixing_use_mix_code_erlang"}]},
   "protobuffs": {:git, "git://github.com/basho/erlang_protobuffs.git", "d64ada24cf0479bcf3358bd67b3fb3d654ae1990", []},

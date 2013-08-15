@@ -6,7 +6,7 @@ defmodule Rexthinkdb.Mixfile do
       version: "0.0.1",
       elixir: "~> 0.10.1",
       compilers: [:protobuffs, :elixir, :app],
-      deps: deps ]
+      deps: deps(Mix.env) ]
   end
 
   # Configuration for the OTP application
@@ -25,11 +25,20 @@ defmodule Rexthinkdb.Mixfile do
   def env(_), do: []
 
   # Returns the list of dependencies in the format:
-  defp deps do
+  def deps(:prod) do
     [
       { :mix_protobuffs, "~> 0.9.0", git: "git://github.com/nuxlli/mix_protobuffs.git", branch: "fixing_use_mix_code_erlang"},
       { :protobuffs, "~> 0.8.0", git: "git://github.com/basho/erlang_protobuffs.git" },
       { :socket, github: "meh/elixir-socket" }
     ]
+  end
+
+  def deps(:docs) do
+    deps(:prod) ++
+      [ { :ex_doc, github: "elixir-lang/ex_doc" } ]
+  end
+
+  def deps(_) do
+    deps(:prod)
   end
 end
