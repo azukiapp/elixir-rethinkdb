@@ -10,9 +10,11 @@ defmodule Rethinkdb.ConnectionTest do
     assert "localhost" == conn.host
     assert 28015 == conn.port
     assert ""    == conn.authKey
+    assert 1     == conn.nextToken
     assert 20    == conn.timeout
     assert nil   == conn.db
     assert nil   == conn.socket
+    assert false == conn.open
   end
 
   test "support create connect with uri" do
@@ -43,12 +45,12 @@ defmodule Rethinkdb.ConnectionTest do
     {:ok, conn} = Connection.new.connect
     assert is_record(conn, Connection)
     assert is_record(conn.socket, Socket.TCP)
-    assert is_tuple(conn.socket.local!)
+    assert conn.open
 
     conn = Connection.new.connect!
     assert is_record(conn, Connection)
     assert is_record(conn.socket, Socket.TCP)
-    assert is_tuple(conn.socket.local!)
+    assert conn.open
   end
 
   test "connect and authenticate with sucess" do
@@ -59,14 +61,15 @@ defmodule Rethinkdb.ConnectionTest do
 
       version  = :binary.encode_unsigned(0x723081e1, :little)
       auth_key = "auth_key"
-      auth_key = [<<iolist_size(auth_key) :: [size(32), little]>>, auth_key]
+      auth_key = [version, <<iolist_size(auth_key) :: [size(32), little]>>, auth_key]
 
       args = [conn.host, conn.port, [
         packet: :raw,
         active: false
       ]]
+
+      assert conn.socket == mock.module
       assert 1 = mock.num_calls(:connect, args)
-      assert 1 = mock.num_calls(:send, [version])
       assert 1 = mock.num_calls(:send, [auth_key])
       assert 1 = mock.num_calls(:recv!, [0])
     end
@@ -107,18 +110,44 @@ defmodule Rethinkdb.ConnectionTest do
     end
   end
 
+  test "should not authenticate if is opened" do
+    Exmeck.mock_run do
+      mock_authenticate(mock)
+      conn = Connection.new.connect!(mock.module)
+      assert_raise Connection.Error, %r/try to reconnect/, fn ->
+        conn.connect!
+      end
+    end
+  end
+
   test "implements close" do
     conn = Connection.new.connect!
     assert is_tuple(conn.socket.local!)
-    conn.close
+    conn = conn.close
+    refute conn.open
     assert_raise Socket.TCP.Error, fn ->
       conn.socket.local!
+    end
+  end
+
+  test "support to reconnect and reconnect!" do
+    e_msg = "Connection is open"
+
+    {:ok, conn} = Connection.new.connect!.close.reconnect
+    assert conn.open
+    assert {:error, e_msg} == conn.reconnect
+
+    conn = conn.close.reconnect!
+    assert conn.open
+    assert_raise Connection.Error, e_msg, fn ->
+      conn.reconnect!
     end
   end
 
   defp mock_authenticate(mock, response // <<"SUCCESS",0>>) do
     mock.stubs(:connect, [:_, :_, :_], {:ok, mock.module})
     mock.stubs(:send, [:_], :ok)
+    mock.stubs(:local, [], {:ok, :local })
     if is_function(response) do
       mock.stubs(:recv!, response)
     else

@@ -14,9 +14,10 @@ defmodule Rethinkdb.Connection do
     host: "localhost",
     port: 28015,
     authKey: "",
+    nextToken: 1,
     timeout: 20,
     db: nil,
-    socket: nil
+    socket: nil,
   ]
 
   # Record def
@@ -52,6 +53,19 @@ defmodule Rethinkdb.Connection do
   end
 
   @doc """
+    Return true if connection is open
+  """
+  @spec open(t) :: boolean
+  def open(rconn(socket: socket)) when socket != nil do
+    case socket.local do
+      {:ok, _ } -> true
+      _ -> false
+    end
+  end
+
+  def open(_), do: false
+
+  @doc """
     Create a TCP socket to the rethinkdb server, logs in and return
     a Connection record date with socket.
   """
@@ -59,15 +73,17 @@ defmodule Rethinkdb.Connection do
   def connect(rconn() = conn), do: conn.connect(Socket.TCP)
 
   @doc false
-  def connect(socket_mod, rconn() = conn) do
-    unless conn.socket do
-      case socket_mod.connect conn.host, conn.port, packet: :raw, active: false do
-        {:ok, socket} ->
-          authenticate(rconn(conn, socket: socket))
-        {:error, _ } ->
-          { :error, "Could not connect to #{conn.host}:#{conn.port}" }
-      end
+  def connect(socket_mod, rconn(socket: socket) = conn) when socket == nil do
+    case socket_mod.connect conn.host, conn.port, packet: :raw, active: false do
+      {:ok, socket} ->
+        authenticate(rconn(conn, socket: socket))
+      {:error, _ } ->
+        { :error, "Could not connect to #{conn.host}:#{conn.port}" }
     end
+  end
+
+  def connect(_socket_mod, rconn()) do
+    {:error, "Apparently already connected, try to reconnect" }
   end
 
   @doc """
@@ -80,27 +96,51 @@ defmodule Rethinkdb.Connection do
 
   @doc false
   def connect!(socket_mod, rconn() = conn) do
-    case conn.connect(socket_mod) do
-      { :ok, conn } -> conn
-      { :error, msg } -> raise Error, msg: msg
+    return_for_bang!(conn.connect(socket_mod))
+  end
+
+  @doc """
+    Try to reconnect if the connection is closed and return a new
+    connect record with new socket is success.
+  """
+  @spec reconnect(t) :: { :ok, t } | { :error, binary }
+  def reconnect(rconn() = conn) do
+    case open(conn) do
+      false -> connect(rconn(conn, socket: nil))
+      true ->
+        { :error, "Connection is open" }
     end
+  end
+
+  @doc """
+    Try to reconnect if the connection is closed and return a new
+    connect record with new socket is success. Otherwise raises an error.
+  """
+  @spec reconnect!(t) :: { :ok, t } | { :error, binary }
+  def reconnect!(rconn() = conn) do
+    return_for_bang!(reconnect(conn))
   end
 
   @doc """
     Close TCP socket connection
   """
   @spec close(t) :: no_return
-  def close(rconn(socket: socket)), do: socket.close
+  def close(rconn(socket: socket) = conn) do
+    socket.close
+    conn
+  end
+
+  # Ok or shoot exception?
+  defp return_for_bang!({:ok, rconn() = conn}), do: conn
+  defp return_for_bang!({:error, msg}), do: raise(Error, msg: msg)
 
   # Send a protocol version and authenticate with key
   defp authenticate(rconn(socket: socket, authKey: authKey) = conn) do
-    :ok = socket.send(@version)
-
-    authKey = [<<iolist_size(authKey) :: [size(32), little]>>, authKey]
+    authKey = [@version, <<iolist_size(authKey) :: [size(32), little]>>, authKey]
     :ok = socket.send(authKey)
 
     case read_until_null(socket) do
-      {:ok, <<"SUCCESS",0>>} -> {:ok, conn}
+      {:ok, "SUCCESS"} -> {:ok, conn}
       {:ok, response} ->
         IO.puts("#{__MODULE__}.Error: #{response}")
         { :error, "Authentication to #{conn.host}:#{conn.port} fail with #{response}" }
@@ -111,9 +151,9 @@ defmodule Rethinkdb.Connection do
   defp read_until_null(socket, acc // <<>>) do
     result = << acc :: binary, socket.recv!(0) :: binary >>
     case String.slice(result, -1, 1) do
-      << 0 >> -> {:ok, result }
-      _ ->
-        read_until_null(socket, result)
+      << 0 >> ->
+        {:ok, String.slice(result, 0, iolist_size(result) - 1) }
+      _ -> read_until_null(socket, result)
     end
   end
 end
