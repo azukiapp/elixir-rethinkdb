@@ -1,3 +1,3 @@
-# Rexthinkdb
+# Rethinkdb
 
 ** TODO: Add description **

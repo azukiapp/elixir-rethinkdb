@@ -1,8 +1,8 @@
-defmodule Rexthinkdb.Mixfile do
+defmodule Rethinkdb.Mixfile do
   use Mix.Project
 
   def project do
-    [ app: :rexthinkdb,
+    [ app: :'rethinkdb',
       version: "0.0.1",
       elixir: "~> 0.10.1",
       compilers: [:protobuffs, :elixir, :app],
@@ -19,7 +19,7 @@ defmodule Rexthinkdb.Mixfile do
   end
 
   def env(:test) do
-    [rethinkdb_uri: "rethinkdb://localhost:28015/test_rexthinkdb"]
+    [rethinkdb_uri: "rethinkdb://localhost:28015/test_elixir-rethinkdb"]
   end
 
   def env(_), do: []

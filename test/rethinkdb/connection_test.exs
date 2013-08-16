@@ -144,6 +144,14 @@ defmodule Rethinkdb.ConnectionTest do
     end
   end
 
+  test "implements `use` to change database" do
+    conn = Connection.new.db "test"
+    assert "test" == conn.db
+
+    conn = conn.use("test2")
+    assert "test2" == conn.db
+  end
+
   defp mock_authenticate(mock, response // <<"SUCCESS",0>>) do
     mock.stubs(:connect, [:_, :_, :_], {:ok, mock.module})
     mock.stubs(:send, [:_], :ok)

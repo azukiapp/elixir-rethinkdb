@@ -1,4 +1,4 @@
-defmodule RexthinkdbTest do
+defmodule RethinkdbTest do
   use ExUnit.Case
   alias Rethinkdb, as: R
 

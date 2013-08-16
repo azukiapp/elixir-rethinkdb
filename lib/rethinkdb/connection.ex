@@ -30,7 +30,7 @@ defmodule Rethinkdb.Connection do
     Return a new connection according to the instructions
     of the uri.
 
-    ## Examples
+    ## Example
 
       iex> #{__MODULE__}.new("rethinkdb://#{@fields[:host]}:#{@fields[:port]}/test")
       #{__MODULE__}[host: "localhost", port: 28015, authKey: nil, timeout: 20, db: "test"]
@@ -128,6 +128,14 @@ defmodule Rethinkdb.Connection do
   def close(rconn(socket: socket) = conn) do
     socket.close
     conn
+  end
+
+  @doc """
+    Change the default database
+  """
+  @spec use(binary, t) :: t
+  def use(database, rconn() = conn) do
+    rconn(conn, db: database)
   end
 
   # Ok or shoot exception?
