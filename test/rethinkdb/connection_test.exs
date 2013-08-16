@@ -2,6 +2,8 @@ defmodule Rethinkdb.ConnectionTest do
   use Rethinkdb.Case
   alias Rethinkdb.Connection
 
+  import ExUnit.CaptureIO
+
   test "check a default values for new connection" do
     conn = Connection.new
 
@@ -49,11 +51,10 @@ defmodule Rethinkdb.ConnectionTest do
     assert is_tuple(conn.socket.local!)
   end
 
-  test "connect and authenticate" do
+  test "connect and authenticate with sucess" do
     conn = Connection.new("rethinkdb://auth_key@localhost")
     Exmeck.mock_run do
-      mock.stubs(:connect, [:_, :_, :_], {:ok, mock.module})
-      mock.stubs(:send, [:_], :ok)
+      mock_authenticate(mock)
       conn = conn.connect!(mock.module)
 
       version  = :binary.encode_unsigned(0x723081e1, :little)
@@ -67,6 +68,7 @@ defmodule Rethinkdb.ConnectionTest do
       assert 1 = mock.num_calls(:connect, args)
       assert 1 = mock.num_calls(:send, [version])
       assert 1 = mock.num_calls(:send, [auth_key])
+      assert 1 = mock.num_calls(:recv!, [0])
     end
   end
 
@@ -79,6 +81,48 @@ defmodule Rethinkdb.ConnectionTest do
     conn = Connection.new("rethinkdb://localhost:1")
     assert_raise Connection.Error, fn ->
       conn.connect!
+    end
+  end
+
+  test "authenticate fail" do
+    Exmeck.mock_run do
+      msg = "authenticate error"
+      mock_authenticate(mock, <<msg :: binary,0>>)
+      assert capture_io(fn ->
+        assert_raise Connection.Error, %r/#{msg}/, fn ->
+          Connection.new.connect!(mock.module)
+        end
+      end) =~ %r/#{msg}/
+    end
+  end
+
+  test "receive data with loop" do
+    Exmeck.mock_run do
+      mock_authenticate(mock, fn _ ->
+        mock.stubs(:recv!, [:_], << "SS", 0 >>)
+        << "SUCCE" >>
+      end)
+
+      assert mock.module == Connection.new.connect!(mock.module).socket
+    end
+  end
+
+  test "implements close" do
+    conn = Connection.new.connect!
+    assert is_tuple(conn.socket.local!)
+    conn.close
+    assert_raise Socket.TCP.Error, fn ->
+      conn.socket.local!
+    end
+  end
+
+  defp mock_authenticate(mock, response // <<"SUCCESS",0>>) do
+    mock.stubs(:connect, [:_, :_, :_], {:ok, mock.module})
+    mock.stubs(:send, [:_], :ok)
+    if is_function(response) do
+      mock.stubs(:recv!, response)
+    else
+      mock.stubs(:recv!, [:_], response)
     end
   end
 end

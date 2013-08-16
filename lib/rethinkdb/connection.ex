@@ -59,12 +59,11 @@ defmodule Rethinkdb.Connection do
   def connect(rconn() = conn), do: conn.connect(Socket.TCP)
 
   @doc false
-  def connect(socket_mod, rconn(authKey: authKey) = conn) do
+  def connect(socket_mod, rconn() = conn) do
     unless conn.socket do
       case socket_mod.connect conn.host, conn.port, packet: :raw, active: false do
         {:ok, socket} ->
-          :ok = authenticate(socket, authKey)
-          {:ok, rconn(conn, socket: socket) }
+          authenticate(rconn(conn, socket: socket))
         {:error, _ } ->
           { :error, "Could not connect to #{conn.host}:#{conn.port}" }
       end
@@ -87,11 +86,34 @@ defmodule Rethinkdb.Connection do
     end
   end
 
-  # Send a protocol version and authenticate keu
-  defp authenticate(socket, auth_key) do
+  @doc """
+    Close TCP socket connection
+  """
+  @spec close(t) :: no_return
+  def close(rconn(socket: socket)), do: socket.close
+
+  # Send a protocol version and authenticate with key
+  defp authenticate(rconn(socket: socket, authKey: authKey) = conn) do
     :ok = socket.send(@version)
 
-    auth_key = [<<iolist_size(auth_key) :: [size(32), little]>>, auth_key]
-    socket.send(auth_key)
+    authKey = [<<iolist_size(authKey) :: [size(32), little]>>, authKey]
+    :ok = socket.send(authKey)
+
+    case read_until_null(socket) do
+      {:ok, <<"SUCCESS",0>>} -> {:ok, conn}
+      {:ok, response} ->
+        IO.puts("#{__MODULE__}.Error: #{response}")
+        { :error, "Authentication to #{conn.host}:#{conn.port} fail with #{response}" }
+    end
+  end
+
+  # Loop to recv and accumulate data from the socket
+  defp read_until_null(socket, acc // <<>>) do
+    result = << acc :: binary, socket.recv!(0) :: binary >>
+    case String.slice(result, -1, 1) do
+      << 0 >> -> {:ok, result }
+      _ ->
+        read_until_null(socket, result)
+    end
   end
 end
