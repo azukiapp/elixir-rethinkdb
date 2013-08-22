@@ -5,7 +5,6 @@ defmodule Rethinkdb.Mixfile do
     [ app: :'rethinkdb',
       version: "0.0.1",
       elixir: "~> 0.10.1",
-      compilers: [:protobuffs, :elixir, :app],
       deps: deps(Mix.env) ]
   end
 
@@ -27,10 +26,8 @@ defmodule Rethinkdb.Mixfile do
   # Returns the list of dependencies in the format:
   def deps(:prod) do
     [
-      { :meck, github: "eproxus/meck", branch: "develop", override: true },
-      { :mix_protobuffs, "~> 0.9.0", git: "git://github.com/nuxlli/mix_protobuffs.git", branch: "fixing_use_mix_code_erlang"},
-      { :protobuffs, "~> 0.8.0", git: "git://github.com/basho/erlang_protobuffs.git" },
-      { :socket, github: "meh/elixir-socket" }
+      { :socket, github: "meh/elixir-socket" },
+      { :protobuf, github: "azukiapp/elixir-protobuf" },
     ]
   end
 
