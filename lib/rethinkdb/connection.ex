@@ -27,10 +27,10 @@ defmodule Rethinkdb.Connection do
   @type t :: record
 
   @doc """
-    Return a new connection according to the instructions
-    of the uri.
+  Return a new connection according to the instructions
+  of the uri.
 
-    ## Example
+  ## Example
 
       iex> #{__MODULE__}.new("rethinkdb://#{@fields[:host]}:#{@fields[:port]}/test")
       #{__MODULE__}[host: "localhost", port: 28015, authKey: nil, timeout: 20, db: "test"]
@@ -122,7 +122,8 @@ defmodule Rethinkdb.Connection do
   end
 
   @doc """
-    Close TCP socket connection
+  Close an open connection. Closing a connection cancels all outstanding requests
+  and frees the memory associated with the open requests.
   """
   @spec close(t) :: no_return
   def close(rconn(socket: socket) = conn) do
@@ -131,11 +132,29 @@ defmodule Rethinkdb.Connection do
   end
 
   @doc """
-    Change the default database
+  Change the default database on this connection.
+
+  ## Example:
+
+  Change the default database so that we don't need to specify the database when
+  referencing a table.
+
+      iex> conn = Rethinkdb.connect
+      iex> conn.use('heroes')
   """
   @spec use(binary, t) :: t
   def use(database, rconn() = conn) do
     rconn(conn, db: database)
+  end
+
+  @doc false
+  def _start(rql, rconn(db: db, nextToken: nextToken) = conn) do
+    { conn.nextToken(nextToken + 1), send_and_recv(QL2.Query.new(
+      type: :'START',
+      query: rql.build,
+      token: nextToken,
+      global_optargs: [QL2.global_database(db)]
+    ), conn) }
   end
 
   # Ok or shoot exception?
@@ -163,5 +182,21 @@ defmodule Rethinkdb.Connection do
         {:ok, String.slice(result, 0, iolist_size(result) - 1) }
       _ -> read_until_null(socket, result)
     end
+  end
+
+  defp send_and_recv(query, rconn(socket: socket) = conn) do
+    :ok = send(query, socket)
+    QL2.Response.decode(recv(socket))
+  end
+
+  defp send(query, socket) do
+    iolist = query.encode
+    length = iolist_size(iolist)
+    socket.send!([<<length :: [size(32), little]>>, iolist])
+  end
+
+  defp recv(socket) do
+    length = :binary.decode_unsigned(socket.recv!(4), :little)
+    socket.recv!(length)
   end
 end

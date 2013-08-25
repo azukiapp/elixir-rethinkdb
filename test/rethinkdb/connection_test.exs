@@ -144,12 +144,23 @@ defmodule Rethinkdb.ConnectionTest do
     end
   end
 
-  test "implements `use` to change database" do
+  test "defines `use` to change default database" do
     conn = Connection.new.db "test"
     assert "test" == conn.db
 
     conn = conn.use("test2")
     assert "test2" == conn.db
+  end
+
+  test "send a query to database and update nextToken" do
+    term = QL2.Term.new(type: :'DATUM', datum: QL2.Datum.new(type: :'R_NUM', r_num: 1))
+    Exmeck.mock_run do
+      mock.stubs(:build, [], term)
+      conn = Connection.new(db: "test").connect!
+      {newconn, QL2.Response[type: response_type]} = conn._start(mock.module)
+      assert conn.nextToken + 1 == newconn.nextToken
+      assert :'SUCCESS_ATOM' == response_type
+    end
   end
 
   defp mock_authenticate(mock, response // <<"SUCCESS",0>>) do
