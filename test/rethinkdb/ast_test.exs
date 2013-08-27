@@ -7,20 +7,21 @@ defmodule Rethinkdb.Ast.Test do
     assert is_record(rql, Ast)
   end
 
-  #test "defines a build to generate a ql2 terms" do
-    #rql = r.expr(1)
-    #assert QL2.Term.new
-  #end
-
   test "defines a run to call build in connect" do
     Exmeck.mock_run do
-      mock.stubs(:run, fn rql -> rql end)
+      mock.stubs(:_start, fn rql -> rql end)
 
       conn = mock.module
       rql  = r.expr(1)
 
       assert rql == rql.run(conn)
-      assert 1   == mock.num_calls(:run, [rql])
+      assert 1   == mock.num_calls(:_start, [rql])
     end
+  end
+
+  test "defines a build to generate a ql2 terms" do
+    rql  = r.expr(1)
+    term = QL2.Term.new(type: :'DATUM', datum: QL2.Datum.from_value(1))
+    assert term == rql.build
   end
 end

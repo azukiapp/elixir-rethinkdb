@@ -184,7 +184,7 @@ defmodule Rethinkdb.Connection do
     end
   end
 
-  defp send_and_recv(query, rconn(socket: socket) = conn) do
+  defp send_and_recv(query, rconn(socket: socket)) do
     :ok = send(query, socket)
     QL2.Response.decode(recv(socket))
   end
