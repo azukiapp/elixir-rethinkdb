@@ -3,7 +3,7 @@
   "finalizer": {:git, "git://github.com/meh/elixir-finalizer.git", "9c38d9145824a46c66f1a010e137a953a6c78e04", []},
   "gpb": {:git, "git://github.com/tomas-abrahamsson/gpb.git", "6b95f3be11b0865833013e9b30baaa0109321e65", []},
   "meck": {:git, "git://github.com/eproxus/meck.git", "4b085043972dee845fc3dd6f3a1926df4e39ed3d", [{:branch, "develop"}]},
-  "protobuf": {:git, "git://github.com/azukiapp/elixir-protobuf.git", "337623ff030225ffc66604b8001a66471d344fc3", []},
+  "protobuf": {:git, "git://github.com/azukiapp/elixir-protobuf.git", "b175ff6240c8e56a7473febaab83b6d9df0cbbcb", []},
   "resource": {:git, "git://github.com/tonyrog/resource.git", "37264ec960263cec0df8d6db0da818297b8d5771", []},
   "socket": {:git, "git://github.com/meh/elixir-socket.git", "08a05b699a38ce88826ff8bc7f6fa821322b3d10", []},
   "uuid": {:git, "git://github.com/avtobiff/erlang-uuid.git", "d7f64acd8412b79e854b8c95f4c66d8e071de8d9", [{:tag, "v0.4.4"}]} ]

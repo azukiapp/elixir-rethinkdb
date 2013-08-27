@@ -29,4 +29,26 @@ defmodule Rethinkdb.DatumHelpers do
       {:'#{key}', decode(value)}
     end)
   end
+
+  @spec encode(json_term) :: Datum.t
+  def encode(value) do
+    case value do
+      null when null == nil or null == :null ->
+        Datum.new(type: :'R_NULL')
+      bool when is_boolean(bool) ->
+        Datum.new(type: :'R_BOOL', r_bool: bool)
+      num  when is_number(num) ->
+        Datum.new(type: :'R_NUM', r_num: num)
+      str  when is_bitstring(str) ->
+        Datum.new(type: :'R_STR', r_str: str)
+      obj  when is_record(obj, HashDict) ->
+        object = lc {key, value} inlist obj.to_list do
+          Datum.AssocPair.new(key: "#{key}", val: encode(value))
+        end
+        Datum.new(type: :'R_OBJECT', r_object: object)
+      list when is_list(list) ->
+        values = lc item inlist list, do: encode(item)
+        Datum.new(type: :'R_ARRAY', r_array: values)
+    end
+  end
 end

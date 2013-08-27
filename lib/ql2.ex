@@ -7,12 +7,16 @@ defmodule QL2 do
     def value(record() = datum) do
       Rethinkdb.DatumHelpers.decode(datum)
     end
+
+    def from_value(value) do
+      Rethinkdb.DatumHelpers.encode(value)
+    end
   end
 
   def global_database(database) do
-    QL2.Query.AssocPair.new(key: "db", val:
-      QL2.Term.new(type: :'DATUM', datum:
-        QL2.Datum.new(type: :'R_STR', r_str: database)
+    __MODULE__.Query.AssocPair.new(key: "db", val:
+      __MODULE__.Term.new(type: :'DATUM', datum:
+        __MODULE__.Datum.new(type: :'R_STR', r_str: database)
       )
     )
   end
