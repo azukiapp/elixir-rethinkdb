@@ -1,8 +1,11 @@
 defmodule Rethinkdb.DatumHelpers do
   alias QL2.Datum
 
+  @typep json_term :: :null | boolean | number | binary | Dict.t | [json_term]
+
+  @spec decode(Datum.t) :: json_term
   def decode(Datum[type: :'R_NULL']) do
-    :null
+    nil
   end
 
   def decode(Datum[type: :'R_BOOL', r_bool: bool]) do

@@ -7,7 +7,7 @@ defmodule Rethinkdb.DatumHelpers.Test do
 
   test "parse null value" do
     datum = Datum.new(type: :'R_NULL')
-    assert :null == decode(datum)
+    assert nil == decode(datum)
   end
 
   test "parse bool value" do
