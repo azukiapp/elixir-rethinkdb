@@ -7,13 +7,6 @@ defmodule Rethinkdb.Ast do
 
   defrecordp :rql, __MODULE__, terms: []
 
-  defmacro __using__(_opts) do
-    quote do
-      alias unquote(__MODULE__)
-      import unquote(__MODULE__), only: [r: 0]
-    end
-  end
-
   # TODO: Adding support initial expr
   def r, do: __MODULE__
 

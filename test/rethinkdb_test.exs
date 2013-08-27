@@ -1,17 +1,21 @@
 defmodule RethinkdbTest do
   use ExUnit.Case
-  alias Rethinkdb, as: R
+  use Rethinkdb
 
-  test "return a connection record" do
-    conn = R.connect
-    assert is_record(conn, R.Connection)
+  test "defined a function to get a AST" do
+    assert Rethinkdb == r
   end
 
   test "return a connection with parameters" do
-    conn = R.connect(host: "example.com")
+    conn = r.connect(host: "example.com")
     assert "example.com" == conn.host
 
-    conn = R.connect("rethinkdb://example.com")
+    conn = r.connect("rethinkdb://example.com")
     assert "example.com" == conn.host
+  end
+
+  test "return a connection record" do
+    conn = r.connect
+    assert is_record(conn, Rethinkdb.Connection)
   end
 end
