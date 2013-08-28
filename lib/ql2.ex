@@ -1,16 +1,22 @@
 defmodule QL2 do
+  alias Rethinkdb.Utils
+
   use Protobuf, from: Path.expand("../proto/ql2.proto", __DIR__)
 
   extra_block "Datum" do
     Record.import __MODULE__, as: :record
 
     def value(record() = datum) do
-      Rethinkdb.DatumHelpers.decode(datum)
+      Utils.DatumHelpers.decode(datum)
     end
 
     def from_value(value) do
-      Rethinkdb.DatumHelpers.encode(value)
+      Utils.DatumHelpers.encode(value)
     end
+  end
+
+  def version do
+    QL2.VersionDummy.Version.value(:V0_2)
   end
 
   def global_database(database) do

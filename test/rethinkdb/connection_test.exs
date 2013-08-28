@@ -151,15 +151,6 @@ defmodule Rethinkdb.ConnectionTest do
     assert "test2" == conn.db
   end
 
-  test "send a query to database" do
-    term = QL2.Term.new(type: :'DATUM', datum: QL2.Datum.new(type: :'R_NUM', r_num: 1))
-    Exmeck.mock_run do
-      mock.stubs(:build, [], term)
-      response = Connection.new(db: "test").connect!._start(mock.module)
-      assert :'SUCCESS_ATOM' == response.type
-    end
-  end
-
   test "defined a method nextToken to return a unique token" do
     conn = Connection.new()
     {token1, token2} = {conn.nextToken, conn.nextToken}

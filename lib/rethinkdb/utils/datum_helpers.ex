@@ -1,4 +1,4 @@
-defmodule Rethinkdb.DatumHelpers do
+defmodule Rethinkdb.Utils.DatumHelpers do
   alias QL2.Datum
 
   @typep json_term :: :null | boolean | number | binary | Dict.t | [json_term]

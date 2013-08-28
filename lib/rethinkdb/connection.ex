@@ -1,7 +1,6 @@
 defmodule Rethinkdb.Connection do
   alias Socket.TCP
-
-  @version :binary.encode_unsigned(0x723081e1, :little)
+  alias Rethinkdb.Utils
 
   defexception Error, msg: nil do
     def message(Error[msg: msg]) do
@@ -16,14 +15,8 @@ defmodule Rethinkdb.Connection do
   end
 
   # Fields and default values for connection record
-  @fields [
-    host: "localhost",
-    port: 28015,
-    authKey: "",
-    timeout: 20,
-    db: nil,
-    socket: nil,
-  ]
+  @fields [ host: "localhost", port: 28015, authKey: "",
+            timeout: 20, db: nil, socket: nil]
 
   # Record def
   Record.deffunctions(@fields, __ENV__)
@@ -79,9 +72,9 @@ defmodule Rethinkdb.Connection do
 
   @doc false
   def connect(socket_mod, rconn(socket: socket) = conn) when socket == nil do
-    case socket_mod.connect conn.host, conn.port, packet: :raw, active: false do
+    case socket_mod.connect(conn.host, conn.port, packet: :raw, active: false) do
       {:ok, socket} ->
-        authenticate(rconn(conn, socket: socket))
+        Utils.Authentication.authenticate(rconn(conn, socket: socket))
       {:error, _ } ->
         { :error, "Could not connect to #{conn.host}:#{conn.port}" }
     end
@@ -151,17 +144,6 @@ defmodule Rethinkdb.Connection do
   def use(database, rconn() = conn) do
     rconn(conn, db: database)
   end
-
-  @doc false
-  def _start(rql, rconn(db: db) = conn) do
-    send_and_recv(conn, QL2.Query.new(
-      type: :'START',
-      query: rql.build,
-      token: nextToken(conn),
-      global_optargs: [QL2.global_database(db)]
-    ))
-  end
-
   @doc """
     Return new a unique token
   """
@@ -172,43 +154,4 @@ defmodule Rethinkdb.Connection do
   # Ok or shoot exception?
   defp return_for_bang!({:ok, rconn() = conn}), do: conn
   defp return_for_bang!({:error, msg}), do: raise(Error, msg: msg)
-
-  # Send a protocol version and authenticate with key
-  defp authenticate(rconn(socket: socket, authKey: authKey) = conn) do
-    authKey = [@version, <<iolist_size(authKey) :: [size(32), little]>>, authKey]
-    :ok = socket.send(authKey)
-
-    case read_until_null(socket) do
-      {:ok, "SUCCESS"} -> {:ok, conn}
-      {:ok, response} ->
-        IO.puts("#{__MODULE__}.Error: #{response}")
-        { :error, "Authentication to #{conn.host}:#{conn.port} fail with #{response}" }
-    end
-  end
-
-  # Loop to recv and accumulate data from the socket
-  defp read_until_null(socket, acc // <<>>) do
-    result = << acc :: binary, socket.recv!(0) :: binary >>
-    case String.slice(result, -1, 1) do
-      << 0 >> ->
-        {:ok, String.slice(result, 0, iolist_size(result) - 1) }
-      _ -> read_until_null(socket, result)
-    end
-  end
-
-  defp send_and_recv(rconn(socket: socket), query) do
-    :ok = send(query, socket)
-    QL2.Response.decode(recv(socket))
-  end
-
-  defp send(query, socket) do
-    iolist = query.encode
-    length = iolist_size(iolist)
-    socket.send!([<<length :: [size(32), little]>>, iolist])
-  end
-
-  defp recv(socket) do
-    length = :binary.decode_unsigned(socket.recv!(4), :little)
-    socket.recv!(length)
-  end
 end
