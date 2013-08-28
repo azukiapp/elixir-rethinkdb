@@ -1,5 +1,5 @@
 defmodule Rethinkdb.Utils.RunQuery.Test do
-  use Rethinkdb.Case
+  use Rethinkdb.Case, async: false
   use Rethinkdb
 
   alias Rethinkdb.Utils.RunQuery
@@ -20,15 +20,33 @@ defmodule Rethinkdb.Utils.RunQuery.Test do
     end
   end
 
-  #test "send a query and parse result", var do
-    #rql = r.expr(1)
-    #{:ok, response} = RunQuery.run(rql.terms, var[:conn])
-    #assert 1.0 == response
-  #end
+  test "send a query and parse result", var do
+    rql = r.expr(1)
+    assert {:ok, 1.0} == RunQuery.run(rql.terms, var[:conn])
+    assert 1.0 == RunQuery.run!(rql.terms, var[:conn])
+  end
 
-  #test "send a query and receive response", var do
-    #rql = r.expr(1)
-    #response = RunQuery.run!(rql.terms, var[:conn])
-    #assert 1.0 == response
-  #end
+  test "raise error to response error" do
+    Exmeck.mock_run do
+      msg = "msg of error"
+      mock_response(mock, QL2.Response.new(
+        type: :'CLIENT_ERROR',
+        response: [QL2.Datum.from_value(msg)],
+        backtrace: QL2.Backtrace.new()
+      ))
+
+      assert_raise Rethinkdb.ResponseError, "CLIENT_ERROR: #{msg}", fn ->
+        RunQuery.run!(r.expr(1).terms, Connection.new(socket: mock.module))
+      end
+    end
+  end
+
+  defp mock_response(mock, response) do
+    mock.stubs(:send!, [:_], :ok)
+    mock.stubs(:local, [], {:ok, :local })
+    mock.stubs(:recv!, fn
+      4 -> <<20, 0, 0, 0>>
+      _ -> response.encode
+    end)
+  end
 end
