@@ -13,7 +13,7 @@ defmodule Rethinkdb.ConnectionTest do
     assert 20    == conn.timeout
     assert nil   == conn.db
     assert nil   == conn.socket
-    assert false == conn.open
+    assert false == conn.open?
   end
 
   test "support create connect with uri" do
@@ -44,12 +44,12 @@ defmodule Rethinkdb.ConnectionTest do
     {:ok, conn} = Connection.new.connect
     assert is_record(conn, Connection)
     assert is_record(conn.socket, Socket.TCP)
-    assert conn.open
+    assert conn.open?
 
     conn = Connection.new.connect!
     assert is_record(conn, Connection)
     assert is_record(conn.socket, Socket.TCP)
-    assert conn.open
+    assert conn.open?
   end
 
   test "connect and authenticate with sucess" do
@@ -81,7 +81,7 @@ defmodule Rethinkdb.ConnectionTest do
 
   test ":connect! fail" do
     conn = Connection.new("rethinkdb://localhost:1")
-    assert_raise Connection.Error, fn ->
+    assert_raise Rethinkdb.RqlDriverError, fn ->
       conn.connect!
     end
   end
@@ -91,7 +91,7 @@ defmodule Rethinkdb.ConnectionTest do
       msg = "authenticate error"
       mock_authenticate(mock, <<msg :: binary,0>>)
       assert capture_io(fn ->
-        assert_raise Connection.Error, %r/#{msg}/, fn ->
+        assert_raise Rethinkdb.RqlDriverError, %r/#{msg}/, fn ->
           Connection.new.connect!(mock.module)
         end
       end) =~ %r/#{msg}/
@@ -113,7 +113,7 @@ defmodule Rethinkdb.ConnectionTest do
     Exmeck.mock_run do
       mock_authenticate(mock)
       conn = Connection.new.connect!(mock.module)
-      assert_raise Connection.Error, %r/try to reconnect/, fn ->
+      assert_raise Rethinkdb.RqlDriverError, %r/try to reconnect/, fn ->
         conn.connect!
       end
     end
@@ -123,7 +123,7 @@ defmodule Rethinkdb.ConnectionTest do
     conn = Connection.new.connect!
     assert is_tuple(conn.socket.local!)
     conn = conn.close
-    refute conn.open
+    refute conn.open?
     assert_raise Socket.TCP.Error, fn ->
       conn.socket.local!
     end
@@ -133,12 +133,12 @@ defmodule Rethinkdb.ConnectionTest do
     e_msg = "Connection is open"
 
     {:ok, conn} = Connection.new.connect!.close.reconnect
-    assert conn.open
+    assert conn.open?
     assert {:error, e_msg} == conn.reconnect
 
     conn = conn.close.reconnect!
-    assert conn.open
-    assert_raise Connection.Error, e_msg, fn ->
+    assert conn.open?
+    assert_raise Rethinkdb.RqlDriverError, e_msg, fn ->
       conn.reconnect!
     end
   end

@@ -1,18 +1,7 @@
 defmodule Rethinkdb.Connection do
   alias Socket.TCP
   alias Rethinkdb.Utils
-
-  defexception Error, msg: nil do
-    def message(Error[msg: msg]) do
-      msg
-    end
-  end
-
-  defexception ResponseError, msg: nil, type: nil, backtrace: nil do
-    def message(ResponseError[msg: msg, type: type]) do
-      "#{type}: #{msg}"
-    end
-  end
+  alias Rethinkdb.RqlDriverError, as: Error
 
   # Fields and default values for connection record
   @fields [ host: "localhost", port: 28015, authKey: "",
@@ -53,15 +42,15 @@ defmodule Rethinkdb.Connection do
   @doc """
     Return true if connection is open
   """
-  @spec open(t) :: boolean
-  def open(rconn(socket: socket)) when socket != nil do
+  @spec open?(t) :: boolean
+  def open?(rconn(socket: socket)) when socket != nil do
     case socket.local do
       {:ok, _ } -> true
       _ -> false
     end
   end
 
-  def open(_), do: false
+  def open?(_), do: false
 
   @doc """
     Create a TCP socket to the rethinkdb server, logs in and return
@@ -103,7 +92,7 @@ defmodule Rethinkdb.Connection do
   """
   @spec reconnect(t) :: { :ok, t } | { :error, binary }
   def reconnect(rconn() = conn) do
-    case open(conn) do
+    case open?(conn) do
       false -> connect(rconn(conn, socket: nil))
       true ->
         { :error, "Connection is open" }

@@ -3,6 +3,18 @@ defmodule Rethinkdb do
 
   use Rethinkdb.Rql
 
+  defexception RqlDriverError, msg: nil do
+    def message(RqlDriverError[msg: msg]) do
+      msg
+    end
+  end
+
+  defexception ResponseError, msg: nil, type: nil, backtrace: nil do
+    def message(ResponseError[msg: msg, type: type]) do
+      "#{type}: #{msg}"
+    end
+  end
+
   defmacro __using__(_opts) do
     helper(__CALLER__.module)
   end
