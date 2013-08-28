@@ -10,7 +10,6 @@ defmodule Rethinkdb.ConnectionTest do
     assert "localhost" == conn.host
     assert 28015 == conn.port
     assert ""    == conn.authKey
-    assert 1     == conn.nextToken
     assert 20    == conn.timeout
     assert nil   == conn.db
     assert nil   == conn.socket
@@ -152,15 +151,20 @@ defmodule Rethinkdb.ConnectionTest do
     assert "test2" == conn.db
   end
 
-  test "send a query to database and update nextToken" do
+  test "send a query to database" do
     term = QL2.Term.new(type: :'DATUM', datum: QL2.Datum.new(type: :'R_NUM', r_num: 1))
     Exmeck.mock_run do
       mock.stubs(:build, [], term)
-      conn = Connection.new(db: "test").connect!
-      {newconn, QL2.Response[type: response_type]} = conn._start(mock.module)
-      assert conn.nextToken + 1 == newconn.nextToken
-      assert :'SUCCESS_ATOM' == response_type
+      response = Connection.new(db: "test").connect!._start(mock.module)
+      assert :'SUCCESS_ATOM' == response.type
     end
+  end
+
+  test "defined a method nextToken to return a unique token" do
+    conn = Connection.new()
+    {token1, token2} = {conn.nextToken, conn.nextToken}
+    assert is_integer(token1)
+    assert token1 != token2
   end
 
   defp mock_authenticate(mock, response // <<"SUCCESS",0>>) do

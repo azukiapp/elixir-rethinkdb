@@ -9,12 +9,17 @@ defmodule Rethinkdb.Connection do
     end
   end
 
+  defexception ResponseError, msg: nil, type: nil, backtrace: nil do
+    def message(ResponseError[msg: msg, type: type]) do
+      "#{type}: #{msg}"
+    end
+  end
+
   # Fields and default values for connection record
   @fields [
     host: "localhost",
     port: 28015,
     authKey: "",
-    nextToken: 1,
     timeout: 20,
     db: nil,
     socket: nil,
@@ -148,13 +153,20 @@ defmodule Rethinkdb.Connection do
   end
 
   @doc false
-  def _start(rql, rconn(db: db, nextToken: nextToken) = conn) do
-    { conn.nextToken(nextToken + 1), send_and_recv(QL2.Query.new(
+  def _start(rql, rconn(db: db) = conn) do
+    send_and_recv(conn, QL2.Query.new(
       type: :'START',
       query: rql.build,
-      token: nextToken,
+      token: nextToken(conn),
       global_optargs: [QL2.global_database(db)]
-    ), conn) }
+    ))
+  end
+
+  @doc """
+    Return new a unique token
+  """
+  def nextToken(rconn()) do
+    :erlang.phash2({node(), make_ref})
   end
 
   # Ok or shoot exception?
@@ -184,7 +196,7 @@ defmodule Rethinkdb.Connection do
     end
   end
 
-  defp send_and_recv(query, rconn(socket: socket)) do
+  defp send_and_recv(rconn(socket: socket), query) do
     :ok = send(query, socket)
     QL2.Response.decode(recv(socket))
   end
