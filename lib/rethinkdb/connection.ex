@@ -23,7 +23,6 @@ defmodule Rethinkdb.Connection do
       #{__MODULE__}[host: "localhost", port: 28015, authKey: nil, timeout: 20, db: "test"]
   """
   @spec new(binary) :: :conn.t
-
   def new(uri) when is_binary(uri) do
     case URI.parse(uri) do
       URI.Info[scheme: "rethinkdb", host: host, port: port, userinfo: authKey, path: db] ->

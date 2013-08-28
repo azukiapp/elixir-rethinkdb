@@ -1,6 +1,5 @@
 defmodule Rethinkdb do
   alias Rethinkdb.Connection
-
   use Rethinkdb.Rql
 
   defexception RqlDriverError, msg: nil do

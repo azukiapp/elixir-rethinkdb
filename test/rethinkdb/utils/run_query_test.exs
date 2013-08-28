@@ -20,15 +20,15 @@ defmodule Rethinkdb.Utils.RunQuery.Test do
     end
   end
 
-  test "send a query to database", var do
-    rql = r.expr(1)
-    {:ok, response} = RunQuery.run(rql.terms, var[:conn])
-    assert :'SUCCESS_ATOM' == response.type
-  end
+  #test "send a query and parse result", var do
+    #rql = r.expr(1)
+    #{:ok, response} = RunQuery.run(rql.terms, var[:conn])
+    #assert 1.0 == response
+  #end
 
-  test "send a query and receive response", var do
-    rql = r.expr(1)
-    response = RunQuery.run!(rql.terms, var[:conn])
-    assert :'SUCCESS_ATOM' == response.type
-  end
+  #test "send a query and receive response", var do
+    #rql = r.expr(1)
+    #response = RunQuery.run!(rql.terms, var[:conn])
+    #assert 1.0 == response
+  #end
 end

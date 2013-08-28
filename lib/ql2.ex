@@ -3,17 +3,8 @@ defmodule QL2 do
 
   use Protobuf, from: Path.expand("../proto/ql2.proto", __DIR__)
 
-  extra_block "Datum" do
-    Record.import __MODULE__, as: :record
-
-    def value(record() = datum) do
-      Utils.DatumHelpers.decode(datum)
-    end
-
-    def from_value(value) do
-      Utils.DatumHelpers.encode(value)
-    end
-  end
+  use_in :Datum, QL2.DatumHelpers
+  use_in :Response, QL2.ResponseHelpers
 
   def version do
     QL2.VersionDummy.Version.value(:V0_2)

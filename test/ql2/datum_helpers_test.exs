@@ -1,4 +1,4 @@
-defmodule Rethinkdb.DatumHelpers.Test do
+defmodule QL2.DatumHelpers.Test do
   use Rethinkdb.Case
 
   alias QL2.Datum
