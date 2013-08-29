@@ -13,6 +13,15 @@ defmodule Rethinkdb.Rql.Test do
     assert term == rql.terms
   end
 
+  setup_all do
+    {:ok, conn: r.connect(db: "test") }
+  end
+
+  test :expr, var do
+    assert 1_000 == r.expr(1_000).run!(var[:conn])
+    assert "bob" == r.expr("bob").run!(var[:conn])
+  end
+
   test "defines a run to call run with connect" do
     Exmeck.mock_run Rethinkdb.Utils.RunQuery do
       mock.stubs(:run, [:_, :_], {:ok, :result})

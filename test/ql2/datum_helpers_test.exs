@@ -41,8 +41,8 @@ defmodule QL2.DatumHelpers.Test do
   end
 
   test "create a datum from string value" do
-    datum = Datum.new(type: :'R_STR', r_str: "Foo Bar")
-    assert datum == Datum.from_value("Foo Bar")
+    datum = Datum.new(type: :'R_STR', r_str: "Foo Bar").encode
+    assert Datum.decode(datum) == Datum.from_value("Foo Bar")
   end
 
   test "parse array values" do
