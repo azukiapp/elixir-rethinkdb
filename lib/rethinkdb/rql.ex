@@ -41,7 +41,24 @@ defmodule Rethinkdb.Rql do
         Utils.RunQuery.run!(terms, conn)
       end
 
+      # MATH AND LOGIC
+      @methods [
+        "add", "sub", "mul", "div", "mod",
+        {:and, :'ALL'}, {:or, :'ANY'},
+        "eq", "ne", "gt", "ge", "lt", "le",
+      ]
+
+      def not(rql(terms: terms)) do
+        rql(terms: Term.new(type: :'NOT', args: [terms]))
+      end
       # CONTROL STRUCTURES
+      def expr(Term[] = terms), do: rql(terms: terms)
+      def expr(rql() = query), do: query
+
+      def expr([head|_] = value) when is_tuple(head) do
+        expr(HashDict.new(value))
+      end
+
       def expr(value) do
         rql(terms: Term.new(type: :'DATUM', datum: Datum.from_value(value)))
       end
@@ -60,6 +77,21 @@ defmodule Rethinkdb.Rql do
       def connect(opts // []) do
         Rethinkdb.Connection.new(opts).connect!
       end
+
+      # Define methods
+      Module.eval_quoted __MODULE__, Enum.map(@methods, fn(logic) ->
+        {logic, enum} = case logic do
+          logic when is_tuple(logic) -> logic
+          logic ->
+            {:'#{logic}', :'#{String.upcase(logic)}'}
+        end
+        quote do
+          def unquote(logic)(value, rql(terms: right)) do
+            rql(terms: left) = expr(value)
+            rql(terms: Term.new(type: unquote(enum), args: [right, left]))
+          end
+        end
+      end)
     end
   end
 end
