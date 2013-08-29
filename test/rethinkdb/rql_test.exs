@@ -14,7 +14,10 @@ defmodule Rethinkdb.Rql.Test do
   end
 
   setup_all do
-    {:ok, conn: r.connect(db: "test") }
+    conn = r.connect(db: "test")
+    r.db(conn.db).table_drop("dc_universe").run(conn)
+    r.db(conn.db).table_create("dc_universe").run(conn)
+    {:ok, conn: conn }
   end
 
   test "drop database", var do
@@ -27,6 +30,24 @@ defmodule Rethinkdb.Rql.Test do
   test "create database", var do
     r.db_drop("heroes").run(var[:conn])
     assert HashDict.new(created: 1) == r.db_create("heroes").run!(var[:conn])
+  end
+
+  test "list databases", var do
+    assert is_list(r.db_list.run!(var[:conn]))
+  end
+
+  test "drop and create tables", var do
+    table = "drop_create_drop"
+    conn  = var[:conn]
+
+    r.db(conn.db).table_drop(table).run(conn)
+    assert HashDict.new(created: 1) == r.db(conn.db).table_create(table).run!(conn)
+    assert HashDict.new(dropped: 1) == r.db(conn.db).table_drop(table).run!(conn)
+  end
+
+  test "list table in database", var do
+    conn = var[:conn]
+    assert "dc_universe" in r.db(conn.db).table_list.run!(conn)
   end
 
   test :expr, var do
