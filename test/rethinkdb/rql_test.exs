@@ -59,6 +59,12 @@ defmodule Rethinkdb.Rql.Test do
     assert 2 == r.expr(12).mod(10).run!(var[:conn])
   end
 
+  test "define append and prepend", var do
+    array = [1, 2, 3, 4]
+    assert array ++ [5] == r.expr(array).append(5).run!(var[:conn])
+    assert [0 | array]  == r.expr(array).prepend(0).run!(var[:conn])
+  end
+
   test "defines a run to call run with connect" do
     Exmeck.mock_run Rethinkdb.Utils.RunQuery do
       mock.stubs(:run, [:_, :_], {:ok, :result})

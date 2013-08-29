@@ -51,6 +51,12 @@ defmodule Rethinkdb.Rql do
       def not(rql(terms: terms)) do
         rql(terms: Term.new(type: :'NOT', args: [terms]))
       end
+
+      # DOCUMENT MANIPULATION
+      @methods @methods ++ [
+        "append", "prepend"
+      ]
+
       # CONTROL STRUCTURES
       def expr(Term[] = terms), do: rql(terms: terms)
       def expr(rql() = query), do: query
