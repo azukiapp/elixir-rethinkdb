@@ -15,6 +15,8 @@ defmodule Rethinkdb.Rql do
       @typep datum_arg :: :null | boolean | number | binary
       @typep expr_arg :: Dict.t | {any, any} | [expr_arg] | fun | atom | term | Term.AssocPair.t | datum_arg
 
+      Module.register_attribute __MODULE__, :methods, accumulate: true
+
       # TODO: Adding support initial expr
       @spec r :: atom
       def r, do: __MODULE__
@@ -32,6 +34,12 @@ defmodule Rethinkdb.Rql do
       similar to relational databases.
       """
 
+      # MANIPULATING DATABASES
+      @methods [
+        {:db_create, :DB_CREATE, [:primary]},
+        {:db_drop, :DB_DROP, [:primary]}
+      ]
+
       # ACCESSING RQL
       def run(conn, rql(terms: terms) = query) do
         Utils.RunQuery.run(terms, conn)
@@ -41,23 +49,28 @@ defmodule Rethinkdb.Rql do
         Utils.RunQuery.run!(terms, conn)
       end
 
+      # SELECTING DATA
+      @methods [
+        {:db, :DB, [:primary]}
+      ]
+
       # MATH AND LOGIC
       @methods [
         "add", "sub", "mul", "div", "mod",
-        {:and, :'ALL'}, {:or, :'ANY'},
+        {:and, :'ALL'}, {:or, :'ANY'}, {:not, :'NOT', [:without_param]},
         "eq", "ne", "gt", "ge", "lt", "le",
       ]
 
-      def not(rql(terms: terms)) do
-        rql(terms: Term.new(type: :'NOT', args: [terms]))
-      end
-
       # DOCUMENT MANIPULATION
-      @methods @methods ++ [
+      @methods [
         "append", "prepend"
       ]
 
       # CONTROL STRUCTURES
+      @methods [
+        {:info, :'INFO', [:without_param]}
+      ]
+
       def expr(Term[] = terms), do: rql(terms: terms)
       def expr(rql() = query), do: query
 
@@ -84,20 +97,59 @@ defmodule Rethinkdb.Rql do
         Rethinkdb.Connection.new(opts).connect!
       end
 
-      # Define methods
-      Module.eval_quoted __MODULE__, Enum.map(@methods, fn(logic) ->
-        {logic, enum} = case logic do
-          logic when is_tuple(logic) -> logic
-          logic ->
-            {:'#{logic}', :'#{String.upcase(logic)}'}
+      defmodule MethodHelpers do
+        def get_methods(methods) do
+          methods = List.flatten(methods)
+          lc method inlist methods, do: method_def(method)
         end
-        quote do
-          def unquote(logic)(value, rql(terms: right)) do
-            rql(terms: left) = expr(value)
-            rql(terms: Term.new(type: unquote(enum), args: [right, left]))
+
+        defp method_def({method, type, opts}) do
+          quotes = []
+
+          if :primary in opts do
+            quotes = [method_def(:primary, method, type) | quotes]
+          end
+
+          if :without_param in opts do
+            quotes = [method_def(:without_param, method, type) | quotes]
+          end
+
+          quotes
+        end
+
+        defp method_def(method) when is_bitstring(method) do
+          method_def({:'#{method}', :'#{String.upcase(method)}'})
+        end
+
+        defp method_def({method, type})do
+          quote do
+            def unquote(method)(value, rql(terms: right)) do
+              rql(terms: left) = expr(value)
+              rql(terms: Term.new(type: unquote(type), args: [right, left]))
+            end
           end
         end
-      end)
+
+        defp method_def(:primary, method, type) do
+          quote do
+            def unquote(method)(value) do
+              args = [expr(value).terms]
+              rql(terms: Term.new(type: unquote(type), args: args))
+            end
+          end
+        end
+
+        defp method_def(:without_param, method, type) do
+          quote do
+            def unquote(method)(rql(terms: right)) do
+              rql(terms: Term.new(type: unquote(type), args: [right]))
+            end
+          end
+        end
+      end
+
+      # Define methods
+      Module.eval_quoted __MODULE__, MethodHelpers.get_methods(@methods)
     end
   end
 end

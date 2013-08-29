@@ -17,6 +17,18 @@ defmodule Rethinkdb.Rql.Test do
     {:ok, conn: r.connect(db: "test") }
   end
 
+  test "drop database", var do
+    r.db_drop("heroes").run(var[:conn])
+    assert_raise Rethinkdb.ResponseError, fn ->
+      r.db("heroes").info.run!(var[:conn])
+    end
+  end
+
+  test "create database", var do
+    r.db_drop("heroes").run(var[:conn])
+    assert HashDict.new(created: 1) == r.db_create("heroes").run!(var[:conn])
+  end
+
   test :expr, var do
     assert 1_000 == r.expr(1_000).run!(var[:conn])
     assert "bob" == r.expr("bob").run!(var[:conn])
@@ -63,6 +75,11 @@ defmodule Rethinkdb.Rql.Test do
     array = [1, 2, 3, 4]
     assert array ++ [5] == r.expr(array).append(5).run!(var[:conn])
     assert [0 | array]  == r.expr(array).prepend(0).run!(var[:conn])
+  end
+
+  test "get info", var do
+    result = HashDict.new(type: "NUMBER", value: "1")
+    assert result == r.expr(1).info.run!(var[:conn])
   end
 
   test "defines a run to call run with connect" do
