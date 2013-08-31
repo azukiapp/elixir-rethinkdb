@@ -6,17 +6,18 @@ defmodule Rethinkdb.Rql.Test do
   end
 
   def r, do: RqlTest
+  def pp(value), do: IO.inspect value
 
   test "defines a terms to generate a ql2 terms" do
     rql  = r.expr(1)
     term = QL2.Term.new(type: :'DATUM', datum: QL2.Datum.from_value(1))
-    assert term == rql.terms
+    assert term == rql.build
   end
 
   setup_all do
     conn = r.connect(db: "test")
-    r.db(conn.db).table_drop("dc_universe").run(conn)
-    r.db(conn.db).table_create("dc_universe").run(conn)
+    r.table_drop("dc_universe").run(conn)
+    r.table_create("dc_universe").run(conn)
     {:ok, conn: conn }
   end
 
@@ -41,8 +42,24 @@ defmodule Rethinkdb.Rql.Test do
     conn  = var[:conn]
 
     r.db(conn.db).table_drop(table).run(conn)
-    assert HashDict.new(created: 1) == r.db(conn.db).table_create(table).run!(conn)
-    assert HashDict.new(dropped: 1) == r.db(conn.db).table_drop(table).run!(conn)
+    assert HashDict.new(created: 1) ==
+      r.db(conn.db).table_create(table).run!(conn)
+    assert HashDict.new(dropped: 1) ==
+      r.db(conn.db).table_drop(table).run!(conn)
+  end
+
+  #test "create table with options", var do
+  #end
+
+  test "select table", var do
+    conn  = var[:conn]
+    name  = "dc_universe"
+
+    table = r.table(name).info.run!(conn)
+    assert name == table[:name]
+
+    table = r.db(conn.db).table("dc_universe").info.run!(conn)
+    assert name == table[:name]
   end
 
   test "list table in database", var do
@@ -66,8 +83,7 @@ defmodule Rethinkdb.Rql.Test do
   end
 
   test "expr to expr values" do
-    assert r.expr(1).terms == r.expr(r.expr(1)).terms
-    assert r.expr(1).terms == r.expr(r.expr(1).terms).terms
+    assert r.expr(1).build == r.expr(r.expr(1)).build
   end
 
   test "logic operators", var do
@@ -78,9 +94,9 @@ defmodule Rethinkdb.Rql.Test do
     assert true  == r.expr(1).lt(2).run!(var[:conn])
     assert true  == r.expr(1).le(2).run!(var[:conn])
 
-    assert true  == r.expr(false).not.run!(var[:conn])
-    assert true  == r.expr(true).and(true).run!(var[:conn])
-    assert true  == r.expr(false).or(true).run!(var[:conn])
+    assert true  == r.expr(false)._not.run!(var[:conn])
+    assert true  == r.expr(true)._and(true).run!(var[:conn])
+    assert true  == r.expr(false)._or(true).run!(var[:conn])
   end
 
   test "math operators", var do
@@ -112,10 +128,10 @@ defmodule Rethinkdb.Rql.Test do
       rql  = r.expr(1)
 
       assert {:ok, :result} == rql.run(conn)
-      assert 1 == mock.num_calls(:run, [rql.terms, conn])
+      assert 1 == mock.num_calls(:run, [rql.build, conn])
 
       assert :result == rql.run!(conn)
-      assert 1 == mock.num_calls(:run!, [rql.terms, conn])
+      assert 1 == mock.num_calls(:run!, [rql.build, conn])
     end
   end
 

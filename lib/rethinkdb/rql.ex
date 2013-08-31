@@ -5,6 +5,8 @@ defmodule Rethinkdb.Rql do
 
   defmacro __using__(_opts) do
     quote location: :keep do
+
+      defrecordp :term, type: nil, args: [], optargs: []
       defrecordp :rql, __MODULE__, terms: []
 
       @type conn   :: Rethinkdb.Connection.t
@@ -22,13 +24,6 @@ defmodule Rethinkdb.Rql do
       @doc false
       def rr, do: r
 
-      @doc false
-      def terms(rql(terms: terms)) do
-        terms
-      end
-
-      use Rethinkdb.Utils.RqlMethods
-
       # MANIPULATING DATABASES
       @doc """
       Create a database. A RethinkDB database is a collection of
@@ -42,7 +37,7 @@ defmodule Rethinkdb.Rql do
           iex> r.db_create("superheroes").run!(conn)
           HashDict#<[created: 1]>
       """
-      rql_method :db_create, :DB_CREATE, :primary
+      def db_create(name), do: new_term(:'DB_CREATE', [name])
 
       @doc """
       Drop a database. The database, all its tables, and
@@ -56,7 +51,7 @@ defmodule Rethinkdb.Rql do
           iex> r.db_drop("superheroes").run!(conn)
           HashDict#<[dropped: 1]>
       """
-      rql_method :db_drop, :DB_DROP, :primary
+      def db_drop(name), do: new_term(:'DB_DROP', [name])
 
       @doc """
       List all database names in the system.
@@ -68,60 +63,117 @@ defmodule Rethinkdb.Rql do
           iex> r.db_list().run!(conn)
           ["test", "rethinkdb_test"]
       """
-      rql_method :db_list, :DB_LIST, :primary_without
+      def db_list, do: new_term(:'DB_LIST')
 
       # MANIPULATING TABLES
-      rql_method :table_create, :TABLE_CREATE, :opts
-      rql_method :table_drop, :TABLE_DROP
-      rql_method :table_list, :TABLE_LIST, :without_param
-
-      # ACCESSING RQL
-      def run(conn, rql(terms: terms) = query) do
-        Utils.RunQuery.run(terms, conn)
+      # TODO: Test options
+      def table_create(name, opts // [], rql() = query // rql()) do
+        new_term(:'TABLE_CREATE', [name], opts, query)
       end
 
-      def run!(conn, rql(terms: terms) = query) do
-        Utils.RunQuery.run!(terms, conn)
+      def table_drop(name, rql() = query // rql()) do
+        new_term(:'TABLE_DROP', [name], [], query)
+      end
+
+      def table_list(rql() = query // rql()) do
+        new_term(:'TABLE_LIST', [], query)
+      end
+
+      # ACCESSING RQL
+      def run(conn, rql() = query) do
+        Utils.RunQuery.run(build(query), conn)
+      end
+
+      def run!(conn, rql() = query) do
+        Utils.RunQuery.run!(build(query), conn)
       end
 
       # SELECTING DATA
-      rql_method :db, :DB, :primary
+      def db(name) do
+        new_term(:'DB', [name])
+      end
+
+      def table(name, rql() = query // rql()) do
+        new_term(:'TABLE', [name], query)
+      end
 
       # MATH AND LOGIC
-      rql_method :add
-      rql_method :sub
-      rql_method :mul
-      rql_method :div
-      rql_method :mod
+      def add(value, rql() = query) do
+        new_term(:'ADD', [value], query)
+      end
 
-      rql_method :and, :'ALL'
-      rql_method :or , :'ANY'
-      rql_method :not, :'NOT', :without_param
+      def sub(value, rql() = query) do
+        new_term(:'SUB', [value], query)
+      end
 
-      rql_method :eq
-      rql_method :ne
-      rql_method :gt
-      rql_method :ge
-      rql_method :lt
-      rql_method :le
+      def mul(value, rql() = query) do
+        new_term(:'MUL', [value], query)
+      end
+
+      def div(value, rql() = query) do
+        new_term(:'DIV', [value], query)
+      end
+
+      def mod(value, rql() = query) do
+        new_term(:'MOD', [value], query)
+      end
+
+      def _and(value, rql() = query) do
+        new_term(:'ALL', [value], query)
+      end
+
+      def _or(value, rql() = query) do
+        new_term(:'ANY', [value], query)
+      end
+
+      def _not(rql() = query) do
+        new_term(:'NOT', [], query)
+      end
+
+      def eq(value, rql() = query) do
+        new_term(:'EQ', [value], query)
+      end
+
+      def ne(value, rql() = query) do
+        new_term(:'NE', [value], query)
+      end
+
+      def gt(value, rql() = query) do
+        new_term(:'GT', [value], query)
+      end
+
+      def ge(value, rql() = query) do
+        new_term(:'GE', [value], query)
+      end
+
+      def lt(value, rql() = query) do
+        new_term(:'LT', [value], query)
+      end
+
+      def le(value, rql() = query) do
+        new_term(:'LE', [value], query)
+      end
 
       # DOCUMENT MANIPULATION
-      rql_method :append
-      rql_method :prepend
+      def append(value, rql() = query) do
+        new_term(:'APPEND', [value], query)
+      end
+
+      def prepend(value, rql() = query) do
+        new_term(:'PREPEND', [value], query)
+      end
 
       # CONTROL STRUCTURES
-      rql_method :info, :'INFO', :without_param
+      def info(rql() = query) do
+        new_term(:'INFO', [], query)
+      end
 
-      def expr(Term[] = terms), do: rql(terms: terms)
       def expr(rql() = query), do: query
-
       def expr([head|_] = value) when is_tuple(head) do
         expr(HashDict.new(value))
       end
 
-      def expr(value) do
-        rql(terms: Term.new(type: :'DATUM', datum: Datum.from_value(value)))
-      end
+      def expr(value), do: new_term(:EXPR, [value])
 
       @doc """
       Create a new connection to the database server
@@ -138,21 +190,45 @@ defmodule Rethinkdb.Rql do
         Rethinkdb.Connection.new(opts).connect!
       end
 
-      defp build_term_assocpair(key, value) when is_atom(key) do
-        build_term_assocpair(atom_to_binary(key, :utf8), value)
-      end
-      defp build_term_assocpair(key, value) when is_binary(key) do
-        Term.AssocPair.new(key: key, val: expr(value).terms)
+      # Build a rql terms in a ql2 terms
+      @doc false
+      def build(rql(terms: terms)) do
+        Enum.reduce terms, nil, build_terms(&1, &2)
       end
 
-      defp option_term({key, value}) when is_atom(value) do
-        option_term({key, atom_to_binary(value, :utf8)})
+      defp build_terms(term(type: :'EXPR', args: [value]), _left) do
+        Term.new(type: :'DATUM', datum: Datum.from_value(value))
       end
-      defp option_term({key, value}) when is_atom(key) do
-        option_term({atom_to_binary(key, :utf8), value})
+
+      defp build_terms(term(type: type, args: args, optargs: optargs), left) do
+        args = lc arg inlist args do
+          build_terms(term(type: :'EXPR', args: [arg]), nil)
+        end
+
+        if left != nil, do: args = [left | args]
+
+        Term.new(type: type, args: args)
       end
-      defp option_term({key, value}) do
-        build_term_assocpair(key, value)
+
+      # Helper to terms create
+      defp new_term(type, args // []) do
+        new_term(type, args, [], rql())
+      end
+
+      defp new_term(type, args, nil) do
+        new_term(type, args, [], rql())
+      end
+
+      defp new_term(type, args, rql() = query) do
+        new_term(type, args, [], query)
+      end
+
+      defp new_term(type, args, opts) do
+        new_term(type, args, opts, rql())
+      end
+
+      defp new_term(type, args, optargs, rql(terms: terms)) do
+        rql(terms: terms ++ [term(type: type, args: args, optargs: optargs)])
       end
     end
   end

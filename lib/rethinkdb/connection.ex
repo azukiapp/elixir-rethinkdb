@@ -5,7 +5,7 @@ defmodule Rethinkdb.Connection do
 
   # Fields and default values for connection record
   @fields [ host: "localhost", port: 28015, authKey: "",
-            timeout: 20, db: nil, socket: nil]
+            timeout: 20, db: nil, socket: nil, debug: false]
 
   # Record def
   Record.deffunctions(@fields, __ENV__)
@@ -24,18 +24,7 @@ defmodule Rethinkdb.Connection do
   """
   @spec new(binary) :: :conn.t
   def new(uri) when is_binary(uri) do
-    case URI.parse(uri) do
-      URI.Info[scheme: "rethinkdb", host: host, port: port, userinfo: authKey, path: db] ->
-        db = List.last(String.split(db || "", "/"))
-        rconn([
-          host: host,
-          port: port || @fields[:port],
-          authKey: authKey || @fields[:authKey],
-          db: db != "" && db || @fields[:db]
-        ])
-      _ ->
-        {:error, "invalid uri, ex: rethinkdb://#{@fields[:authKey]}:#{@fields[:db]}/[database]"}
-    end
+    from_uri(URI.parse(uri))
   end
 
   @doc """
@@ -142,4 +131,21 @@ defmodule Rethinkdb.Connection do
   # Ok or shoot exception?
   defp return_for_bang!({:ok, rconn() = conn}), do: conn
   defp return_for_bang!({:error, msg}), do: raise(Error, msg: msg)
+
+  # New record from valid uri scheme
+  defp from_uri(URI.Info[
+    scheme: "rethinkdb", host: host, port: port, userinfo: authKey, path: db
+  ]) do
+    db = List.last(String.split(db || "", "/"))
+    rconn([
+      host: host,
+      port: port || @fields[:port],
+      authKey: authKey || @fields[:authKey],
+      db: db != "" && db || @fields[:db]
+    ])
+  end
+
+  defp from_uri(_) do
+    {:error, "invalid uri, ex: rethinkdb://#{@fields[:authKey]}:#{@fields[:db]}/[database]"}
+  end
 end

@@ -22,8 +22,8 @@ defmodule Rethinkdb.Utils.RunQuery.Test do
 
   test "send a query and parse result", var do
     rql = r.expr(1)
-    assert {:ok, 1.0} == RunQuery.run(rql.terms, var[:conn])
-    assert 1.0 == RunQuery.run!(rql.terms, var[:conn])
+    assert {:ok, 1.0} == RunQuery.run(rql.build, var[:conn])
+    assert 1.0 == RunQuery.run!(rql.build, var[:conn])
   end
 
   test "raise error to response error" do
@@ -36,7 +36,7 @@ defmodule Rethinkdb.Utils.RunQuery.Test do
       ))
 
       assert_raise Rethinkdb.ResponseError, "CLIENT_ERROR: #{msg}", fn ->
-        RunQuery.run!(r.expr(1).terms, Connection.new(socket: mock.module))
+        RunQuery.run!(r.expr(1).build, Connection.new(socket: mock.module))
       end
     end
   end
