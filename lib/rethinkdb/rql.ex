@@ -67,6 +67,10 @@ defmodule Rethinkdb.Rql do
 
       # MANIPULATING TABLES
       # TODO: Test options
+      def table_create(name, rql() = query) do
+        table_create(name, [], query)
+      end
+
       def table_create(name, opts // [], rql() = query // rql()) do
         new_term(:'TABLE_CREATE', [name], opts, query)
       end
@@ -196,18 +200,23 @@ defmodule Rethinkdb.Rql do
         Enum.reduce terms, nil, build_terms(&1, &2)
       end
 
-      defp build_terms(term(type: :'EXPR', args: [value]), _left) do
+      defp build_term_datum(value) do
         Term.new(type: :'DATUM', datum: Datum.from_value(value))
       end
 
-      defp build_terms(term(type: type, args: args, optargs: optargs), left) do
-        args = lc arg inlist args do
-          build_terms(term(type: :'EXPR', args: [arg]), nil)
-        end
+      defp build_terms(term(type: :'EXPR', args: [value]), _left) do
+        build_term_datum(value)
+      end
 
+      defp build_terms(term(type: type, args: args, optargs: optargs), left) do
+        args = lc arg inlist args, do: build_term_datum(arg)
         if left != nil, do: args = [left | args]
 
-        Term.new(type: type, args: args)
+        optargs = lc {key, value} inlist optargs do
+          Term.AssocPair.new(key: "#{key}", val: build_term_datum(value))
+        end
+
+        Term.new(type: type, args: args, optargs: optargs)
       end
 
       # Helper to terms create
@@ -223,7 +232,7 @@ defmodule Rethinkdb.Rql do
         new_term(type, args, [], query)
       end
 
-      defp new_term(type, args, opts) do
+      defp new_term(type, args, opts) when is_list(opts) do
         new_term(type, args, opts, rql())
       end
 

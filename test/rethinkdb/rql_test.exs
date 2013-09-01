@@ -48,8 +48,20 @@ defmodule Rethinkdb.Rql.Test do
       r.db(conn.db).table_drop(table).run!(conn)
   end
 
-  #test "create table with options", var do
-  #end
+  test "create table with options", var do
+    conn = var[:conn]
+    name = "table_opts"
+    r.table_drop(name).run(conn)
+
+    assert HashDict.new(created: 1) ==
+      r.table_create(name, primary_key: :name).run!(conn)
+    assert "name" ==
+      r.table(name).info.run!(conn)[:primary_key]
+
+    assert_raise Rethinkdb.RqlRuntimeError, %r/Unrecognized/, fn ->
+      r.table_create(name, invalid_key: 1).run!(conn)
+    end
+  end
 
   test "select table", var do
     conn  = var[:conn]
