@@ -1,7 +1,7 @@
 defmodule Rethinkdb.Utils.RunQuery do
   alias Rethinkdb.Connection
   alias Rethinkdb.RqlDriverError
-  alias Rethinkdb.ResponseError
+  alias Rethinkdb.RqlRuntimeError
 
   alias QL2.Term
   alias QL2.Query
@@ -22,7 +22,7 @@ defmodule Rethinkdb.Utils.RunQuery do
       {:error, msg} when is_bitstring(msg) ->
         raise(RqlDriverError, msg: msg)
       {:error, type, msg, backtrace} ->
-        raise(ResponseError, type: type, msg: msg, backtrace: backtrace)
+        raise(RqlRuntimeError, type: type, msg: msg, backtrace: backtrace)
     end
   end
 

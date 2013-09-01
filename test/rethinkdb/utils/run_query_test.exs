@@ -35,7 +35,7 @@ defmodule Rethinkdb.Utils.RunQuery.Test do
         backtrace: QL2.Backtrace.new()
       ))
 
-      assert_raise Rethinkdb.ResponseError, "CLIENT_ERROR: #{msg}", fn ->
+      assert_raise Rethinkdb.RqlRuntimeError, "CLIENT_ERROR: #{msg}", fn ->
         RunQuery.run!(r.expr(1).build, Connection.new(socket: mock.module))
       end
     end

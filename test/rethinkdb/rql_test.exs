@@ -23,7 +23,7 @@ defmodule Rethinkdb.Rql.Test do
 
   test "drop database", var do
     r.db_drop("heroes").run(var[:conn])
-    assert_raise Rethinkdb.ResponseError, fn ->
+    assert_raise Rethinkdb.RqlRuntimeError, fn ->
       r.db("heroes").info.run!(var[:conn])
     end
   end

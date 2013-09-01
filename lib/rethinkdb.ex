@@ -8,8 +8,8 @@ defmodule Rethinkdb do
     end
   end
 
-  defexception ResponseError, msg: nil, type: nil, backtrace: nil do
-    def message(ResponseError[msg: msg, type: type]) do
+  defexception RqlRuntimeError, msg: nil, type: nil, backtrace: nil do
+    def message(RqlRuntimeError[msg: msg, type: type]) do
       "#{type}: #{msg}"
     end
   end
