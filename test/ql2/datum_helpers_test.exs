@@ -45,6 +45,11 @@ defmodule QL2.DatumHelpers.Test do
     assert Datum.decode(datum) == Datum.from_value("Foo Bar")
   end
 
+  test "create a datum from a atom" do
+    datum = Datum.new(type: :'R_STR', r_str: "foo").encode
+    assert Datum.decode(datum) == Datum.from_value(:foo)
+  end
+
   test "parse array values" do
     datum = Datum.new(type: :'R_ARRAY', r_array: [])
     assert [] == datum.value

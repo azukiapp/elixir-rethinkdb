@@ -45,6 +45,8 @@ defmodule QL2.DatumHelpers do
             new(type: :'R_NUM', r_num: num)
           str  when is_bitstring(str) ->
             new(type: :'R_STR', r_str: str)
+          atom when is_atom(atom) ->
+            new(type: :'R_STR', r_str: "#{atom}")
           obj  when is_record(obj, HashDict) ->
             object = lc {key, value} inlist obj.to_list do
               QL2.Datum.AssocPair.new(key: "#{key}", val: from_value(value))
