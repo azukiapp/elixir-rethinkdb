@@ -3,6 +3,11 @@ defmodule RethinkdbTest do
   use Rethinkdb
 
   test "defined a function to get a AST" do
-    assert Rethinkdb == r
+    assert Rethinkdb.Rql == r
+  end
+
+  test "alias errors" do
+    assert RqlDriverError  == Rethinkdb.RqlDriverError
+    assert RqlRuntimeError == Rethinkdb.RqlRuntimeError
   end
 end

@@ -1,6 +1,6 @@
 defmodule Rethinkdb do
   alias Rethinkdb.Connection
-  use Rethinkdb.Rql
+  alias Rethinkdb.Rql
 
   defexception RqlDriverError, msg: nil do
     def message(RqlDriverError[msg: msg]) do
@@ -21,6 +21,10 @@ defmodule Rethinkdb do
   # Import rr in Iex to not conflict Iex.Helper.r
   defp helper(module) do
     method = module && :r || :rr
-    quote do: import(unquote(__MODULE__), only: [{unquote(method), 0}])
+    quote do
+      import(Rql, only: [{unquote(method), 0}])
+      alias unquote(__MODULE__).RqlDriverError
+      alias unquote(__MODULE__).RqlRuntimeError
+    end
   end
 end
