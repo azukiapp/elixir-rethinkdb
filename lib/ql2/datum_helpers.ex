@@ -52,6 +52,11 @@ defmodule QL2.DatumHelpers do
               QL2.Datum.AssocPair.new(key: "#{key}", val: from_value(value))
             end
             new(type: :'R_OBJECT', r_object: object)
+          [{_, _} | _] = obj ->
+            object = lc {key, value} inlist obj do
+              QL2.Datum.AssocPair.new(key: "#{key}", val: from_value(value))
+            end
+            new(type: :'R_OBJECT', r_object: object)
           list when is_list(list) ->
             values = lc item inlist list, do: from_value(item)
             new(type: :'R_ARRAY', r_array: values)

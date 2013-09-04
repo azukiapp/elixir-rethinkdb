@@ -78,6 +78,15 @@ defmodule QL2.DatumHelpers.Test do
     assert object == datum.value
   end
 
+  test "create a object from a list of tuple" do
+    value  = Datum.new(type: :'R_NUM', r_num: 1000)
+    object = Datum.AssocPair.new(key: "key", val: value)
+    datum  = Datum.new(type: :'R_OBJECT', r_object: [object])
+
+    object = [key: 1000]
+    assert datum == Datum.from_value(object)
+  end
+
   test "create a object from a HashDict value" do
     value  = Datum.new(type: :'R_NUM', r_num: 1000)
     object = Datum.AssocPair.new(key: "key", val: value)
