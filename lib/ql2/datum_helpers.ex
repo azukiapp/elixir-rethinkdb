@@ -1,4 +1,5 @@
 defmodule QL2.DatumHelpers do
+  alias Rethinkdb.Rql
 
   defmacro __using__(_opts) do
     quote do
@@ -47,6 +48,8 @@ defmodule QL2.DatumHelpers do
             new(type: :'R_STR', r_str: str)
           atom when is_atom(atom) ->
             new(type: :'R_STR', r_str: "#{atom}")
+          rql when is_record(rql, Rql) ->
+            Rql.build(rql)
           obj  when is_record(obj, HashDict) ->
             object = lc {key, value} inlist obj.to_list do
               QL2.Datum.AssocPair.new(key: "#{key}", val: from_value(value))

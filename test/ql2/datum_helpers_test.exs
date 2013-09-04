@@ -1,5 +1,6 @@
 defmodule QL2.DatumHelpers.Test do
   use Rethinkdb.Case
+  use Rethinkdb
 
   alias QL2.Datum
 
@@ -93,6 +94,15 @@ defmodule QL2.DatumHelpers.Test do
     datum  = Datum.new(type: :'R_OBJECT', r_object: [object])
 
     object = HashDict.new(key: 1000)
+    assert datum == Datum.from_value(object)
+  end
+
+  test "support to create datum from rql" do
+    value  = r.expr(1)
+    object = Datum.AssocPair.new(key: "key", val: value.build)
+    datum  = Datum.new(type: :'R_OBJECT', r_object: [object])
+
+    object = HashDict.new(key: value)
     assert datum == Datum.from_value(object)
   end
 end
