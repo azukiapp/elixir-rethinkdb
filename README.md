@@ -1,6 +1,6 @@
 # Elixir Rethinkdb Driver
 
-This is a prototype of a (RethinkDB)[http://www.rethinkdb.com/] client driver written in Elixir.
+This is a prototype of a [RethinkDB](http://www.rethinkdb.com) client driver written in Elixir.
 This driver utilizes Erlang R16B01 and Elixir 0.10.1.
 
 ## License

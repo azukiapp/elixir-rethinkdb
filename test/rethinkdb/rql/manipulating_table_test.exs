@@ -3,15 +3,9 @@ defmodule Rethinkdb.Rql.ManipulatingTable.Test do
   use Rethinkdb
 
   setup_all do
-    conn = connect_with_db("#{dbns}_manipulatingtable")
-    name = "dc_universe"
-    try do
-      r.table(name).run!(conn)
-    rescue
-      RqlRuntimeError ->
-        r.table_create(name).run!(conn)
-    end
-    {:ok, conn: conn, table: name }
+    table = "dc_universe"
+    conn  = connect("#{dbns}_manipulatingtable", table)
+    {:ok, conn: conn, table: table }
   end
 
   test "drop and create tables", var do
@@ -53,22 +47,25 @@ defmodule Rethinkdb.Rql.ManipulatingTable.Test do
   end
 
   test "create a new secondary simple index", var do
-    {conn, table} = {var[:conn], var[:table]}
-    indexes = ["code_name", "power_rating"]
-    table   = r.table(table)
-    created = HashDict.new(created: 1)
-    list    = table.index_list
+    {conn, name} = {var[:conn], var[:table]}
+    table = r.table(name)
+    table.index_drop("code_name").run(conn)
 
-    lc index inlist indexes, do: table.index_drop(index).run(conn)
+    assert HashDict.new(created: 1) ==
+      table.index_create("code_name").run!(conn)
+    assert "code_name" in table.index_list.run!(conn)
+  end
 
-    assert created == table.index_create("code_name").run!(conn)
-    assert ["code_name"] == list.run!(conn)
+  # TODO: Test index
+  test "create a new secondary index with function", var do
+    {conn, name} = {var[:conn], var[:table]}
+    table = r.table(name)
+    table.index_drop("power_rating").run(conn)
 
-    assert created == table.index_create("power_rating", fn hero ->
+    assert HashDict.new(created: 1) == table.index_create("power_rating", fn hero ->
       hero["combat_power"].add(hero["compassion_power"].mul(2))
     end).run!(conn)
-
-    assert indexes == list.run!(conn)
+    assert "power_rating" in table.index_list.run!(conn)
   end
 
   test "table index drop", var do

@@ -13,15 +13,26 @@ defmodule Rethinkdb.Case do
 
   def dbns, do: "elixir_drive_test"
 
-  def connect_with_db(db) do
+  def connect(db) do
     conn = r.connect(db: db)
+    info_or_create(r.db(db), r.db_create(db), conn)
+    conn
+  end
+
+  def connect(db, table) do
+    conn = connect(db)
+    db   = r.db(db)
+    info_or_create(db.table(table), db.table_create(table), conn)
+    conn
+  end
+
+  defp info_or_create(info, create, conn) do
     try do
-      r.db(db).info.run!(conn)
+      info.info.run!(conn)
     rescue
       RqlRuntimeError ->
-        r.db_create(db).run!(conn)
+        create.run!(conn)
     end
-    conn
   end
 
   def pp(value), do: IO.inspect(value)
