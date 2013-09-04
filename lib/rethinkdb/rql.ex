@@ -96,6 +96,11 @@ defmodule Rethinkdb.Rql do
     new_term(:'INDEX_LIST', [], query)
   end
 
+  # Write Data
+  def insert(data, opts // [], rql() = query) do
+    new_term(:'INSERT', [data], opts, query)
+  end
+
   # ACCESSING RQL
   def run(conn, rql() = query) do
     Utils.RunQuery.run(build(query), conn)

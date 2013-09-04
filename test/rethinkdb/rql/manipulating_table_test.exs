@@ -3,8 +3,7 @@ defmodule Rethinkdb.Rql.ManipulatingTable.Test do
   use Rethinkdb
 
   setup_all do
-    table = "dc_universe"
-    conn  = connect("#{dbns}_manipulatingtable", table)
+    {conn, table} = connect("dc_universe")
     {:ok, conn: conn, table: table }
   end
 
