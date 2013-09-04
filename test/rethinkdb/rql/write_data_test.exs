@@ -89,4 +89,47 @@ defmodule Rethinkdb.Rql.WriteData.Test do
     assert 1  == result[:replaced]
     assert 32 == result[:new_val][:age]
   end
+
+  test "replace json document", var do
+    {conn, table} = {var[:conn], var[:table]}
+    table = r.table(table)
+    data  = HashDict.new(superhero: "Thor", superpower: "Beautiful hair")
+    hero  = table.insert(data, return_vals: true).run!(conn)[:new_val]
+
+    new    = Dict.delete(Dict.put(hero, :age, 30), :superpower)
+    result = table.get(hero[:id]).replace(new, non_atomic: true, return_vals: true).run!(conn)
+    assert 1   == result[:replaced]
+    assert 30  == result[:new_val][:age]
+    assert nil == result[:new_val][:superpower]
+  end
+
+  test "replace json document with function merge", var do
+    {conn, table} = {var[:conn], var[:table]}
+    table = r.table(table)
+    data  = HashDict.new(superhero: "Thor", superpower: "Beautiful hair")
+    hero  = table.insert(data, return_vals: true).run!(conn)[:new_val]
+
+    result = table.get(hero[:id]).replace(fn hero ->
+      hero.merge([is_fav: true])
+    end, return_vals: true).run!(conn)
+    assert 1 == result[:replaced]
+    assert result[:new_val][:is_fav]
+    assert hero[:superhero] == result[:new_val][:superhero]
+  end
+
+  test "delete json document", var do
+    {conn, table} = {var[:conn], var[:table]}
+    table = r.table(table)
+    data = [
+      [ superhero: "Wolverine", superpower: "Adamantium" ],
+      [ superhero: "Spiderman", superpower: "spidy sense" ]
+    ]
+    [hero, _] = table.insert(data).run!(conn)[:generated_keys]
+    result    = table.get(hero).delete(return_vals: true).run!(conn)
+
+    assert 1    == result[:deleted]
+    assert hero == result[:old_val][:id]
+
+    assert table.delete().run!(conn)[:deleted] >= 1
+  end
 end

@@ -113,6 +113,22 @@ defmodule Rethinkdb.Rql do
     new_term(:'UPDATE', [data], opts, query)
   end
 
+  def replace(data, rql() = query) do
+    replace(data, [], query)
+  end
+
+  def replace(func, opts, rql() = query) when is_function(func) do
+    replace(func(func), opts, query)
+  end
+
+  def replace(data, opts, rql() = query) do
+    new_term(:'REPLACE', [data], opts, query)
+  end
+
+  def delete(opts // [], rql() = query) do
+    new_term(:'DELETE', [], opts, query)
+  end
+
   # Selecting data
   def get(id, rql() = query) do
     new_term(:'GET', [id], [], query)
@@ -209,6 +225,9 @@ defmodule Rethinkdb.Rql do
   #def row do
     #new_term(:'IMPLICIT_VAR', [])
   #end
+  def merge(object, rql() = query) do
+    new_term(:'MERGE', [object], [], query)
+  end
 
   def append(value, rql() = query) do
     new_term(:'APPEND', [value], query)
@@ -230,6 +249,10 @@ defmodule Rethinkdb.Rql do
   def expr(rql() = query), do: query
   def expr([head|_] = value) when is_tuple(head) do
     expr(HashDict.new(value))
+  end
+
+  def expr(value) when is_record(value, HashDict) do
+    make_obj(value)
   end
 
   def expr(values) when is_list(values) do
@@ -273,17 +296,27 @@ defmodule Rethinkdb.Rql do
   end
 
   defp build_terms(term(type: type, args: args, optargs: optargs), left) do
-    args = lc arg inlist args, do: build_arg(arg)
+    optargs = format_opts(optargs)
+    args    = format_args(args)
     if left != nil, do: args = [left | args]
-
-    optargs = lc {key, value} inlist optargs do
-      Term.AssocPair.new(key: "#{key}", val: build_arg(value))
-    end
-
     Term.new(type: type, args: args, optargs: optargs)
   end
 
-  defp build_arg(arg) do
+  defp format_args(args) do
+    lc arg inlist args, do: format_arg(arg)
+  end
+
+  defp format_opts(args) when is_record(args, HashDict) do
+    format_opts(args.to_list)
+  end
+
+  defp format_opts(optargs) do
+    lc {key, value} inlist optargs do
+      Term.AssocPair.new(key: "#{key}", val: format_arg(value))
+    end
+  end
+
+  defp format_arg(arg) do
     case arg do
       rql()  = rql  -> build(rql)
       term() = term -> build_terms(term, nil)
@@ -304,7 +337,7 @@ defmodule Rethinkdb.Rql do
     new_term(type, args, [], query)
   end
 
-  defp new_term(type, args, opts) when is_list(opts) do
+  defp new_term(type, args, opts) when is_list(opts) or is_record(opts, HashDict) do
     new_term(type, args, opts, rql())
   end
 
@@ -314,6 +347,10 @@ defmodule Rethinkdb.Rql do
 
   defp make_array(items) when is_list(items) do
     new_term(:'MAKE_ARRAY', items)
+  end
+
+  defp make_obj(values) do
+    new_term(:'MAKE_OBJ', [], values)
   end
 
   defp var(n) do
