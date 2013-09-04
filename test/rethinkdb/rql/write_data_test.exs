@@ -64,4 +64,29 @@ defmodule Rethinkdb.Rql.WriteData.Test do
     assert data[:superpower] == result[:old_val][:superpower]
     assert new_val[:superpower] == result[:new_val][:superpower]
   end
+
+  test "update json documents", var do
+    {conn, table} = {var[:conn], var[:table]}
+    table = r.table(table)
+    data  = HashDict.new(superhero: "Thor", superpower: "Beautiful hair")
+    hero  = table.insert(data, return_vals: true).run!(conn)[:new_val]
+
+    result = table.get(hero[:id]).update([superpower: "Thor's Hammer"], return_vals: true).run!(conn)
+    assert 1 == result[:replaced]
+    assert "Thor's Hammer"  == result[:new_val][:superpower]
+    assert result[:old_val][:superpower] != result[:new_val][:superpower]
+  end
+
+  test "update json document with function", var do
+    {conn, table} = {var[:conn], var[:table]}
+    table = r.table(table)
+    data  = HashDict.new(superhero: "Thor", age: 30, superpower: "Beautiful hair")
+    hero  = table.insert(data, return_vals: true).run!(conn)[:new_val]
+
+    result = table.get(hero[:id]).update(fn hero ->
+      [age: hero[:age].add(2)]
+    end, return_vals: true).run!(conn)
+    assert 1  == result[:replaced]
+    assert 32 == result[:new_val][:age]
+  end
 end

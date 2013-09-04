@@ -101,6 +101,35 @@ defmodule Rethinkdb.Rql do
     new_term(:'INSERT', [data], opts, query)
   end
 
+  def update(data, rql() = query) do
+    update(data, [], query)
+  end
+
+  def update(func, opts, rql() = query) when is_function(func) do
+    update(func(func), opts, query)
+  end
+
+  def update(data, opts, rql() = query) do
+    new_term(:'UPDATE', [data], opts, query)
+  end
+
+  # Selecting data
+  def get(id, rql() = query) do
+    new_term(:'GET', [id], [], query)
+  end
+
+  def getAll(ids, rql() = query) do
+    getAll(ids, [], query)
+  end
+
+  def getAll(ids, opts, rql() = query) when not is_list(ids) do
+    getAll([ids], opts, query)
+  end
+
+  def getAll(ids, opts, rql() = query) do
+    new_term(:'GET_ALL', ids, opts, query)
+  end
+
   # ACCESSING RQL
   def run(conn, rql() = query) do
     Utils.RunQuery.run(build(query), conn)
@@ -177,6 +206,10 @@ defmodule Rethinkdb.Rql do
   end
 
   # DOCUMENT MANIPULATION
+  #def row do
+    #new_term(:'IMPLICIT_VAR', [])
+  #end
+
   def append(value, rql() = query) do
     new_term(:'APPEND', [value], query)
   end
@@ -227,7 +260,12 @@ defmodule Rethinkdb.Rql do
   end
 
   defp build_term_datum(value) do
-    Term.new(type: :'DATUM', datum: Datum.from_value(value))
+    try do
+      Term.new(type: :'DATUM', datum: Datum.from_value(value))
+    rescue
+      CaseClauseError ->
+        IO.inspect(value)
+    end
   end
 
   defp build_terms(term(type: :'EXPR', args: [value]), _left) do
@@ -235,20 +273,22 @@ defmodule Rethinkdb.Rql do
   end
 
   defp build_terms(term(type: type, args: args, optargs: optargs), left) do
-    args = lc arg inlist args do
-      case arg do
-        rql()  = rql  -> build(rql)
-        term() = term -> build_terms(term, nil)
-        arg -> build_term_datum(arg)
-      end
-    end
+    args = lc arg inlist args, do: build_arg(arg)
     if left != nil, do: args = [left | args]
 
     optargs = lc {key, value} inlist optargs do
-      Term.AssocPair.new(key: "#{key}", val: build_term_datum(value))
+      Term.AssocPair.new(key: "#{key}", val: build_arg(value))
     end
 
     Term.new(type: type, args: args, optargs: optargs)
+  end
+
+  defp build_arg(arg) do
+    case arg do
+      rql()  = rql  -> build(rql)
+      term() = term -> build_terms(term, nil)
+      arg -> build_term_datum(arg)
+    end
   end
 
   # Helper to terms create
@@ -289,7 +329,11 @@ defmodule Rethinkdb.Rql do
     {_, arity} = :erlang.fun_info(func, :arity)
     arg_count  = :lists.seq(1, arity)
     func_args  = lc n inlist arg_count, do: var(n)
-    args       = [apply(func, func_args)]
+
+    args = case apply(func, func_args) do
+      [{_, _}|_] = obj -> [new_term(:'MAKE_OBJ', [], obj)]
+      rql() = query -> [query]
+    end
 
     new_term(:'FUNC', [expr(arg_count) | args])
   end

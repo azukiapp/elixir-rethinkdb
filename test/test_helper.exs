@@ -13,12 +13,12 @@ defmodule Rethinkdb.Case do
 
   def dbns, do: "elixir_drive_test"
 
-  def connect(table) do
+  def connect(table, table_opts // []) do
     conn = r.connect(db: "#{dbns}")
     db   = r.db(conn.db)
 
     info_or_create(db, r.db_create(conn.db), conn)
-    info_or_create(db.table(table), db.table_create(table), conn)
+    info_or_create(db.table(table), db.table_create(table, table_opts), conn)
 
     {conn, table}
   end
