@@ -7,6 +7,16 @@ defmodule Rethinkdb.Rql.SelectingData.Test do
     {:ok, conn: conn, table: table }
   end
 
+  test "select table", var do
+    {conn, name} = {var[:conn], var[:table]}
+
+    table = r.table(name).info.run!(conn)
+    assert name == table[:name]
+
+    table = r.db(conn.db).table(name).info.run!(conn)
+    assert name == table[:name]
+  end
+
   test "get a document by primary id", var do
     {conn, table} = {var[:conn], var[:table]}
     table  = r.table(table)
@@ -43,5 +53,11 @@ defmodule Rethinkdb.Rql.SelectingData.Test do
 
     [wolf] = table.getAll("Everything", index: :superpower).run!(conn)
     assert "Wolf" == wolf[:superhero]
+  end
+
+  test "not implement between" do
+    assert_raise Rethinkdb.RqlDriverError, %r/between not implemented yet/, fn ->
+      r.table(:any).between(10, 20)
+    end
   end
 end

@@ -30,16 +30,6 @@ defmodule Rethinkdb.Rql.ManipulatingTable.Test do
     end
   end
 
-  test "select table", var do
-    {conn, name} = {var[:conn], var[:table]}
-
-    table = r.table(name).info.run!(conn)
-    assert name == table[:name]
-
-    table = r.db(conn.db).table(name).info.run!(conn)
-    assert name == table[:name]
-  end
-
   test "list table in database", var do
     {conn, name} = {var[:conn], var[:table]}
     assert name in r.db(conn.db).table_list.run!(conn)

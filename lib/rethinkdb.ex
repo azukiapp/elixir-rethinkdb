@@ -6,6 +6,10 @@ defmodule Rethinkdb do
     def message(RqlDriverError[msg: msg]) do
       msg
     end
+
+    def not_implemented(method) do
+      raise(RqlDriverError, msg: "#{method} not implemented yet")
+    end
   end
 
   defexception RqlRuntimeError, msg: nil, type: nil, backtrace: nil do

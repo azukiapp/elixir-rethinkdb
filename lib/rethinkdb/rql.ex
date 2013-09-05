@@ -2,6 +2,7 @@ defmodule Rethinkdb.Rql do
   alias QL2.Datum
   alias QL2.Term
   alias Rethinkdb.Utils
+  alias Rethinkdb.RqlDriverError
 
   defrecordp :term, type: nil, args: [], optargs: []
   defrecordp :rql, __MODULE__, terms: []
@@ -130,6 +131,14 @@ defmodule Rethinkdb.Rql do
   end
 
   # Selecting data
+  def db(name) do
+    new_term(:'DB', [name])
+  end
+
+  def table(name, rql() = query // rql()) do
+    new_term(:'TABLE', [name], query)
+  end
+
   def get(id, rql() = query) do
     new_term(:'GET', [id], [], query)
   end
@@ -146,6 +155,10 @@ defmodule Rethinkdb.Rql do
     new_term(:'GET_ALL', ids, opts, query)
   end
 
+  def between(_left_bound, _right_bound, rql() = _query) do
+    RqlDriverError.not_implemented(:between)
+  end
+
   # ACCESSING RQL
   def run(conn, rql() = query) do
     Utils.RunQuery.run(build(query), conn)
@@ -153,15 +166,6 @@ defmodule Rethinkdb.Rql do
 
   def run!(conn, rql() = query) do
     Utils.RunQuery.run!(build(query), conn)
-  end
-
-  # SELECTING DATA
-  def db(name) do
-    new_term(:'DB', [name])
-  end
-
-  def table(name, rql() = query // rql()) do
-    new_term(:'TABLE', [name], query)
   end
 
   # MATH AND LOGIC
