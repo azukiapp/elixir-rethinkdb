@@ -23,8 +23,8 @@ defmodule Rethinkdb.Case do
 
     info_or_create(db, r.db_create(conn.db), conn)
     Enum.each(tables, fn table ->
-      info_or_create(db.table(table), db.table_create(table, table_opts), conn)
-      db.table(table).delete.run!(conn)
+      db.table_drop(table).run(conn)
+      db.table_create(table, table_opts).run!(conn)
     end)
 
     {conn, tables}

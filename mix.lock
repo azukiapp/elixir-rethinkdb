@@ -1,7 +1,7 @@
 [ "ex_doc": {:git, "git://github.com/elixir-lang/ex_doc.git", "81c74209a90ec5635c258e20e8767fb469262e8c", []},
   "exmeck": {:git, "git://github.com/azukiapp/exmeck.git", "b11dabbe02a1ecd49b4636fe92862711d3bec3ff", []},
   "finalizer": {:git, "git://github.com/meh/elixir-finalizer.git", "9c38d9145824a46c66f1a010e137a953a6c78e04", []},
-  "gpb": {:git, "git://github.com/tomas-abrahamsson/gpb.git", "6b95f3be11b0865833013e9b30baaa0109321e65", []},
+  "gpb": {:git, "git://github.com/tomas-abrahamsson/gpb.git", "e07d6dae832120ce26276fac30eb79b6d94b0054", []},
   "meck": {:git, "git://github.com/eproxus/meck.git", "1286aba1cb6bbd6c9fc3f817740758b224843ee7", [{:tag, "0.8.1"}]},
   "protobuf": {:git, "git://github.com/azukiapp/elixir-protobuf.git", "59f09c232703fd3785e1b3519c6bba6dec3fee39", []},
   "resource": {:git, "git://github.com/tonyrog/resource.git", "37264ec960263cec0df8d6db0da818297b8d5771", []},

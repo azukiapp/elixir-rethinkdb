@@ -188,6 +188,27 @@ defmodule Rethinkdb.Rql do
     new_term(:'EQ_JOIN', [left_attr, other_table], opts, query)
   end
 
+  def zip(rql() = query) do
+    new_term(:'ZIP', [], query)
+  end
+
+  # Transformations
+  def map(func, rql() = query) do
+    new_term(:'MAP', [func(func)], query)
+  end
+
+  def with_fields(fields, options // [], rql() = query) do
+    new_term(:'WITH_FIELDS', [fields, options], query)
+  end
+
+  def concat_map(func, rql() = query) do
+    new_term(:'CONCATMAP', [func(func)], query)
+  end
+
+  def order_by(keys, rql() = query) do
+    new_term(:'ORDERBY', keys, query)
+  end
+
   # Aggregation
   def count(filter // nil, rql() = query) do
     if filter, do: query = filter(filter, query)
@@ -279,10 +300,6 @@ defmodule Rethinkdb.Rql do
 
   def has_fields(selectors, rql() = query) do
     new_term(:'HAS_FIELDS', [selectors], query)
-  end
-
-  def zip(rql() = query) do
-    new_term(:'ZIP', [], query)
   end
 
   # CONTROL STRUCTURES

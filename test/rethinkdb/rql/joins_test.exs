@@ -18,7 +18,7 @@ defmodule Rethinkdb.Rql.Joins.Test do
     ]
 
     lc {table_name, registers} inlist data do
-      r.table(table_name).insert(registers, upsert: true).run!(conn)
+      r.table(table_name).insert(registers).run!(conn)
     end
 
     {:ok, conn: conn, dc: dc, marvel: marvel}
