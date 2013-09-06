@@ -159,6 +159,24 @@ defmodule Rethinkdb.Rql do
     RqlDriverError.not_implemented(:between)
   end
 
+  def filter(rql() = predicate, rql() = query) do
+    filter(fn _ -> predicate end, query)
+  end
+
+  def filter(func, rql() = query) when is_function(func) do
+    new_term(:'FILTER', [func(func)], query)
+  end
+
+  def filter(predicate, rql() = query) do
+    new_term(:'FILTER', [predicate], query)
+  end
+
+  # Aggregation
+  def count(filter // nil, rql() = query) do
+    if filter, do: query = filter(filter, query)
+    new_term(:'COUNT', [], query)
+  end
+
   # ACCESSING RQL
   def run(conn, rql() = query) do
     Utils.RunQuery.run(build(query), conn)
@@ -226,9 +244,10 @@ defmodule Rethinkdb.Rql do
   end
 
   # DOCUMENT MANIPULATION
-  #def row do
-    #new_term(:'IMPLICIT_VAR', [])
-  #end
+  def row do
+    new_term(:'IMPLICIT_VAR', [])
+  end
+
   def merge(object, rql() = query) do
     new_term(:'MERGE', [object], [], query)
   end
@@ -239,6 +258,10 @@ defmodule Rethinkdb.Rql do
 
   def prepend(value, rql() = query) do
     new_term(:'PREPEND', [value], query)
+  end
+
+  def has_fields(selectors, rql() = query) do
+    new_term(:'HAS_FIELDS', [selectors], query)
   end
 
   # CONTROL STRUCTURES
