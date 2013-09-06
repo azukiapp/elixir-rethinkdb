@@ -5,7 +5,7 @@ defmodule Rethinkdb.Rql.SelectingData.Test do
   setup_all do
     {conn, table_name} = connect("vertigo", primary_key: "superhero")
     data = [
-      [life: 999, superhero: "Wolf", superpower: "Everything",
+      [life: 999, superhero: "Lobo", superpower: "Everything",
         abilities: ['super-strength': 10],
         powers: [10, 20]
       ],
@@ -35,29 +35,29 @@ defmodule Rethinkdb.Rql.SelectingData.Test do
 
   test "get a document by primary id", var do
     {conn, table} = {var[:conn], var[:table]}
-    result = table.get("Wolf").run!(conn)
+    result = table.get("Lobo").run!(conn)
     assert "Everything" == result[:superpower]
   end
 
   test "get all documents where the given matches the value", var do
     {conn, table} = {var[:conn], var[:table]}
 
-    [wolf] = table.getAll("Wolf").run!(conn)
-    assert "Wolf" == wolf[:superhero]
+    [wolf] = table.getAll("Lobo").run!(conn)
+    assert "Lobo" == wolf[:superhero]
 
-    [wolf, const] = table.getAll(["Wolf", "Constantine"]).run!(conn)
-    assert "Wolf" == wolf[:superhero]
+    [wolf, const] = table.getAll(["Lobo", "Constantine"]).run!(conn)
+    assert "Lobo" == wolf[:superhero]
     assert "Constantine" == const[:superhero]
   end
 
   test "get all documents with secundary index", var do
     {conn, table} = {var[:conn], var[:table]}
-    data  = [superhero: "Wolf", superpower: "Everything"]
+    data  = [superhero: "Lobo", superpower: "Everything"]
     table.index_create("superpower").run(conn)
     table.insert(data, upsert: true).run!(conn)
 
     [wolf] = table.getAll("Everything", index: :superpower).run!(conn)
-    assert "Wolf" == wolf[:superhero]
+    assert "Lobo" == wolf[:superhero]
   end
 
   test "not implement between" do

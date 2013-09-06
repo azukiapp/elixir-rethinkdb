@@ -171,6 +171,23 @@ defmodule Rethinkdb.Rql do
     new_term(:'FILTER', [predicate], query)
   end
 
+  # Joins
+  def inner_join(sequence, predicate, rql() = query) do
+    new_term(:'INNER_JOIN', [sequence, func(predicate)], query)
+  end
+
+  def outer_join(sequence, predicate, rql() = query) do
+    new_term(:'OUTER_JOIN', [sequence, func(predicate)], query)
+  end
+
+  def eq_join(left_attr, other_table, rql() = query) do
+    eq_join(left_attr, other_table, [], query)
+  end
+
+  def eq_join(left_attr, other_table, opts, rql() = query) do
+    new_term(:'EQ_JOIN', [left_attr, other_table], opts, query)
+  end
+
   # Aggregation
   def count(filter // nil, rql() = query) do
     if filter, do: query = filter(filter, query)
@@ -262,6 +279,10 @@ defmodule Rethinkdb.Rql do
 
   def has_fields(selectors, rql() = query) do
     new_term(:'HAS_FIELDS', [selectors], query)
+  end
+
+  def zip(rql() = query) do
+    new_term(:'ZIP', [], query)
   end
 
   # CONTROL STRUCTURES
