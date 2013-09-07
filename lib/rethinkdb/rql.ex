@@ -240,6 +240,23 @@ defmodule Rethinkdb.Rql do
     new_term(:'LIMIT', [n], query)
   end
 
+  # TODO: Test with predicate
+  def indexes_of(datum, rql() = query) do
+    new_term(:'INDEXES_OF', [datum], query)
+  end
+
+  def is_empty?(rql() = query) do
+    new_term(:'IS_EMPTY', [], query)
+  end
+
+  def union(sequence, rql() = query) do
+    new_term(:'UNION', [sequence], query)
+  end
+
+  def sample(number, rql() = query) do
+    new_term(:'SAMPLE', [number], query)
+  end
+
   # Aggregation
   def count(filter // nil, rql() = query) do
     if filter, do: query = filter(filter, query)
@@ -453,7 +470,11 @@ defmodule Rethinkdb.Rql do
     new_term(:'VAR', [n])
   end
 
-  def access({Range, start_index, end_index} = ranger, rql() = query) do
+  def access(index, rql() = query) when is_number(index) do
+    new_term(:'NTH', [index], query)
+  end
+
+  def access({Range, start_index, end_index}, rql() = query) do
     opts = case end_index do
       n when n < 0 -> [right_bound: :closed]
       _ -> []

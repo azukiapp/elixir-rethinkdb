@@ -142,4 +142,38 @@ defmodule Rethinkdb.Rql.Transformations.Test do
     [hero] = table[2..-1].run!(conn)
     assert "Hulk" == hero[:superhero]
   end
+
+  test "get the nth element of a sequence", var do
+    {conn, table} = {var[:conn], var[:table]}
+    assert 2 == r.expr([1, 2, 3])[1].run!(conn)
+    assert "Spiderman" == table[0].run!(conn)[:superhero]
+    assert "Hulk"      == table[-1].run!(conn)[:superhero]
+  end
+
+  test "get the indexes of an element in a sequence", var do
+    {conn, _table} = {var[:conn], var[:table]}
+    assert [2] == r.expr(["a", "b", "c"]).indexes_of("c").run!(conn)
+  end
+
+  test "test if a sequence is empty", var do
+    {conn, table} = {var[:conn], var[:table]}
+    refute table.is_empty?.run!(conn)
+    assert table.filter(any: true).is_empty?.run!(conn)
+    assert r.expr([]).is_empty?.run!(conn)
+  end
+
+  test "concatenate two sequences", var do
+    {conn, table} = {var[:conn], var[:table]}
+    query = table.union([[superhero: "Gambit"]])
+    assert 4 == query.count.run!(conn)
+    assert "Gambit" == query[-1].run!(conn)[:superhero]
+  end
+
+  test "select a random number of documents", var do
+    {conn, table} = {var[:conn], var[:table]}
+    [hero|_] = result = table.sample(2).run!(conn)
+    assert 2 = length(r.expr([1, 2, 3, 4]).sample(2).run!(conn))
+    assert 2 = length(result)
+    assert 0 < size(hero[:superhero])
+  end
 end
