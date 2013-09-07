@@ -205,8 +205,39 @@ defmodule Rethinkdb.Rql do
     new_term(:'CONCATMAP', [func(func)], query)
   end
 
-  def order_by(keys, rql() = query) do
-    new_term(:'ORDERBY', keys, query)
+  def order_by([{:index, _}|_] = opts, rql() = query) do
+    order_by([], opts, query)
+  end
+
+  def order_by(keys_or_function, opts // [], rql() = query) do
+    if is_function(keys_or_function) do
+      keys_or_function = func(keys_or_function)
+    end
+    new_term(:'ORDERBY', List.wrap(keys_or_function), opts, query)
+  end
+
+  def desc(func) when is_function(func) do
+    desc(func(func))
+  end
+
+  def desc(field) do
+    new_term(:'DESC', [field])
+  end
+
+  def asc(func) when is_function(func) do
+    asc(func(func))
+  end
+
+  def asc(field) do
+    new_term(:'ASC', [field])
+  end
+
+  def skip(n, rql() = query) do
+    new_term(:'SKIP', [n], query)
+  end
+
+  def limit(n, rql() = query) do
+    new_term(:'LIMIT', [n], query)
   end
 
   # Aggregation
@@ -215,7 +246,7 @@ defmodule Rethinkdb.Rql do
     new_term(:'COUNT', [], query)
   end
 
-  # ACCESSING RQL
+  # Accessing Rql
   def run(conn, rql() = query) do
     Utils.RunQuery.run(build(query), conn)
   end
@@ -224,7 +255,7 @@ defmodule Rethinkdb.Rql do
     Utils.RunQuery.run!(build(query), conn)
   end
 
-  # MATH AND LOGIC
+  # Math And Logic
   def add(value, rql() = query) do
     new_term(:'ADD', [value], query)
   end
@@ -281,7 +312,7 @@ defmodule Rethinkdb.Rql do
     new_term(:'LE', [value], query)
   end
 
-  # DOCUMENT MANIPULATION
+  # Document Manipulation
   def row do
     new_term(:'IMPLICIT_VAR', [])
   end
@@ -302,7 +333,7 @@ defmodule Rethinkdb.Rql do
     new_term(:'HAS_FIELDS', [selectors], query)
   end
 
-  # CONTROL STRUCTURES
+  # Control Structures
   def info(rql() = query) do
     new_term(:'INFO', [], query)
   end
@@ -420,6 +451,14 @@ defmodule Rethinkdb.Rql do
 
   defp var(n) do
     new_term(:'VAR', [n])
+  end
+
+  def access({Range, start_index, end_index} = ranger, rql() = query) do
+    opts = case end_index do
+      n when n < 0 -> [right_bound: :closed]
+      _ -> []
+    end
+    new_term(:'SLICE', [start_index, end_index], opts, query)
   end
 
   def access(key, rql() = query) do

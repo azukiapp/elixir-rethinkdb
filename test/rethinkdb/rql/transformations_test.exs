@@ -65,15 +65,81 @@ defmodule Rethinkdb.Rql.Transformations.Test do
     {conn, table} = {var[:conn], var[:table]}
     result = table
       .has_fields(:defeatedMonsters)
+      .order_by(:superhero)
       .concat_map(fn hero -> hero[:defeatedMonsters] end)
       .run!(conn)
-    assert ["rhino", "wolverine"] == result
+    assert ["wolverine", "rhino"] == result
   end
 
-  test "oder by documents", var do
+  test "order documents by fields", var do
     {conn, table} = {var[:conn], var[:table]}
     result = table.order_by([:combatPower, :compassionPower]).run!(conn)
     assert "Captain Marvel" == Enum.first(result)[:superhero]
     assert "Hulk" == List.last(result)[:superhero]
+  end
+
+  test "order documents by index", var do
+    {conn, table} = {var[:conn], var[:table]}
+    table.index_create(:compassionPower).run(conn)
+    result = table.order_by(:combatPower, index: :compassionPower).run!(conn)
+    assert "Hulk" == Enum.first(result)[:superhero]
+    assert "Spiderman" == List.last(result)[:superhero]
+  end
+
+  test "order desc only by index", var do
+    {conn, table} = {var[:conn], var[:table]}
+    table.index_create(:combatPower).run(conn)
+    result = table.order_by(index: r.desc(:combatPower)).run!(conn)
+    assert "Hulk" == Enum.first(result)[:superhero]
+  end
+
+  test "order desc and asc", var do
+    {conn, table} = {var[:conn], var[:table]}
+    result = table.order_by(
+      [r.desc(:combatPower), r.asc(:compassionPower)
+    ]).run!(conn)
+
+    assert "Hulk" == Enum.first(result)[:superhero]
+    assert "Spiderman" == List.last(result)[:superhero]
+  end
+
+  test "order by a function", var do
+    {conn, table} = {var[:conn], var[:table]}
+    func = fn doc ->
+      doc[:combatPower].sub(doc[:compassionPower].mul(0.2))
+    end
+
+    result = table.order_by(func).run!(conn)
+    assert "Spiderman" == Enum.first(result)[:superhero]
+    assert "Hulk" == List.last(result)[:superhero]
+
+    result = table.order_by(r.desc(func)).run!(conn)
+    assert "Hulk" == Enum.first(result)[:superhero]
+    assert "Spiderman" == List.last(result)[:superhero]
+
+    result = table.order_by(r.asc(func)).run!(conn)
+    assert "Spiderman" == Enum.first(result)[:superhero]
+    assert "Hulk" == List.last(result)[:superhero]
+  end
+
+  test "skip a number of elements", var do
+    {conn, table} = {var[:conn], var[:table]}
+    [hero] = table.skip(2).run!(conn)
+    assert "Hulk" == hero[:superhero]
+  end
+
+  test "end sequence after given number", var do
+    {conn, table} = {var[:conn], var[:table]}
+    [hero] = table.limit(1).run!(conn)
+    assert "Spiderman" == hero[:superhero]
+  end
+
+  test "Trim the sequence to within the bounds provided", var do
+    {conn, table} = {var[:conn], var[:table]}
+    [hero] = table[1..2].run!(conn)
+    assert "Captain Marvel" == hero[:superhero]
+
+    [hero] = table[2..-1].run!(conn)
+    assert "Hulk" == hero[:superhero]
   end
 end
