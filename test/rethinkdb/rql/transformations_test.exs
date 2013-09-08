@@ -124,30 +124,30 @@ defmodule Rethinkdb.Rql.Transformations.Test do
 
   test "skip a number of elements", var do
     {conn, table} = {var[:conn], var[:table]}
-    [hero] = table.skip(2).run!(conn)
-    assert "Hulk" == hero[:superhero]
+    [hero] = table.order_by(index: :superhero).skip(2).run!(conn)
+    assert "Spiderman" == hero[:superhero]
   end
 
   test "end sequence after given number", var do
     {conn, table} = {var[:conn], var[:table]}
-    [hero] = table.limit(1).run!(conn)
-    assert "Spiderman" == hero[:superhero]
+    [hero] = table.order_by(index: :superhero).limit(1).run!(conn)
+    assert "Captain Marvel" == hero[:superhero]
   end
 
   test "Trim the sequence to within the bounds provided", var do
     {conn, table} = {var[:conn], var[:table]}
-    [hero] = table[1..2].run!(conn)
-    assert "Captain Marvel" == hero[:superhero]
-
-    [hero] = table[2..-1].run!(conn)
+    [hero] = table.order_by(index: :superhero)[1..2].run!(conn)
     assert "Hulk" == hero[:superhero]
+
+    [hero] = table.order_by(index: :superhero)[2..-1].run!(conn)
+    assert "Spiderman" == hero[:superhero]
   end
 
   test "get the nth element of a sequence", var do
     {conn, table} = {var[:conn], var[:table]}
     assert 2 == r.expr([1, 2, 3])[1].run!(conn)
-    assert "Spiderman" == table[0].run!(conn)[:superhero]
-    assert "Hulk"      == table[-1].run!(conn)[:superhero]
+    assert "Captain Marvel" == table.order_by(index: :superhero)[0].run!(conn)[:superhero]
+    assert "Spiderman"      == table.order_by(index: :superhero)[-1].run!(conn)[:superhero]
   end
 
   test "get the indexes of an element in a sequence", var do
