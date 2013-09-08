@@ -73,6 +73,7 @@ defmodule Rethinkdb.Rql.WriteData.Test do
 
     result = table.get(hero[:id]).update([superpower: "Thor's Hammer"], return_vals: true).run!(conn)
     assert 1 == result[:replaced]
+    assert "Thor" == result[:new_val][:superhero]
     assert "Thor's Hammer"  == result[:new_val][:superpower]
     assert result[:old_val][:superpower] != result[:new_val][:superpower]
   end

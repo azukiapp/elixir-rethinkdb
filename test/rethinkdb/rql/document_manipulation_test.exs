@@ -23,6 +23,42 @@ defmodule Rethinkdb.Rql.DocumentManipulation.Test do
     assert "v2" == result[:id]
   end
 
+  test "plucks a one or more attributes", var do
+    {conn, table} = {var[:conn], var[:table]}
+    data = [ k1: "k1", k2: [k3: "k3", k4: "k4"], k5: "k5"]
+
+    result = table.get("v1").pluck(:value).run!(conn)
+    assert Dict.has_key?(result, :value)
+    refute Dict.has_key?(result, :id)
+
+    result = r.expr(data).pluck([:k1, :k5]).run!(conn)
+    assert Dict.has_key?(result, :k5)
+    assert Dict.has_key?(result, :k1)
+    refute Dict.has_key?(result, :k2)
+
+    result = r.expr(data).pluck(k2: [k3: true]).run!(conn)
+    assert Dict.has_key?(result, :k2)
+    assert Dict.has_key?(result[:k2], :k3)
+    refute Dict.has_key?(result[:k2], :k4)
+
+    assert result == r.expr(data)
+      .pluck(k2: [:k3]).run!(conn)
+  end
+
+  test "not take a attributes", var do
+    {conn, table} = {var[:conn], var[:table]}
+    data = [ k1: "k1", k2: [k3: "k3", k4: "k4"], k5: "k5"]
+
+    result = table.get("v1").without(:value).run!(conn)
+    refute Dict.has_key?(result, :value)
+    assert Dict.has_key?(result, :id)
+
+    result = r.expr(data).without([:k1, k2: [k3: true]]).run!(conn)
+    refute Dict.has_key?(result, :k1)
+    assert Dict.has_key?(result[:k2], :k4)
+    refute Dict.has_key?(result[:k2], :k3)
+  end
+
   test "merge a documents", var do
     {conn, table} = {var[:conn], var[:table]}
 

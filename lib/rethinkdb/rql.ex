@@ -111,7 +111,7 @@ defmodule Rethinkdb.Rql do
   end
 
   def update(data, opts, rql() = query) do
-    new_term(:'UPDATE', [data], opts, query)
+    new_term(:'UPDATE', [expr(data)], opts, query)
   end
 
   def replace(data, rql() = query) do
@@ -347,6 +347,14 @@ defmodule Rethinkdb.Rql do
     new_term(:'IMPLICIT_VAR', [])
   end
 
+  def pluck(selector, rql() = query) do
+    new_term(:'PLUCK', [selector], query)
+  end
+
+  def without(selector, rql() = query) do
+    new_term(:'WITHOUT', [selector], query)
+  end
+
   def merge(object, rql() = query) do
     new_term(:'MERGE', [expr(object)], [], query)
   end
@@ -368,8 +376,24 @@ defmodule Rethinkdb.Rql do
   end
 
   # Control Structures
-  def info(rql() = query) do
-    new_term(:'INFO', [], query)
+  def _do(args, expr) do
+    new_term(:'FUNCALL', [func(expr), args])
+  end
+
+  def for_each(write_query, rql() = query) do
+    new_term(:'FOREACH', [func(write_query)], query)
+  end
+
+  def branch(test, true_branch, false_branch) do
+    new_term(:'BRANCH', [test, true_branch, false_branch])
+  end
+
+  def error(message) do
+    new_term(:'ERROR', [message])
+  end
+
+  def default(value, rql() = query) do
+    new_term(:'DEFAULT', [value], query)
   end
 
   def expr(Range[] = range) do
@@ -390,6 +414,26 @@ defmodule Rethinkdb.Rql do
   end
 
   def expr(value), do: new_term(:EXPR, [value])
+
+  def js(js_string, opts // []) do
+    new_term(:'JAVASCRIPT', [js_string], opts)
+  end
+
+  def coerce_to(type_name, rql() = query) do
+    new_term(:'COERCE_TO', [type_name], query)
+  end
+
+  def type_of(rql() = query) do
+    new_term(:'TYPEOF', [], query)
+  end
+
+  def info(rql() = query) do
+    new_term(:'INFO', [], query)
+  end
+
+  def json(json_string) do
+    new_term(:'JSON', [json_string])
+  end
 
   @doc """
   Create a new connection to the database server
