@@ -143,6 +143,7 @@ defmodule Rethinkdb.Rql do
     new_term(:'GET', [id], [], query)
   end
 
+  # TODO: replace for get_all
   def getAll(ids, rql() = query) do
     getAll(ids, [], query)
   end
@@ -193,6 +194,10 @@ defmodule Rethinkdb.Rql do
   end
 
   # Transformations
+  def map(rql() = predicate, rql() = query) do
+    map(fn _ -> predicate end, query)
+  end
+
   def map(func, rql() = query) do
     new_term(:'MAP', [func(func)], query)
   end
@@ -261,6 +266,14 @@ defmodule Rethinkdb.Rql do
   def count(filter // nil, rql() = query) do
     if filter, do: query = filter(filter, query)
     new_term(:'COUNT', [], query)
+  end
+
+  def reduce(reduction_function, base, rql() = query) do
+    new_term(:'REDUCE', [func(reduction_function)], [base: base], query)
+  end
+
+  def distinct(rql() = query) do
+    new_term(:'DISTINCT', [], query)
   end
 
   # Accessing Rql
@@ -335,7 +348,11 @@ defmodule Rethinkdb.Rql do
   end
 
   def merge(object, rql() = query) do
-    new_term(:'MERGE', [object], [], query)
+    new_term(:'MERGE', [expr(object)], [], query)
+  end
+
+  def literal(object // nil) do
+    new_term(:'LITERAL', object && [object] || [])
   end
 
   def append(value, rql() = query) do
