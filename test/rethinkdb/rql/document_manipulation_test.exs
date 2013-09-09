@@ -6,8 +6,8 @@ defmodule Rethinkdb.Rql.DocumentManipulation.Test do
     {conn, table_name} = connect("doc_manipulation")
     table = r.table(table_name)
     table.insert([
-      [id: "v1", value: "value 1", powers: 10],
-      [id: "v2", value: "value 2", powers: 30],
+      [id: "v1", value: "value 1", powers: 10, spouse: [powers: 10]],
+      [id: "v2", value: "value 2", powers: 30, spouse: []],
     ]).run!(conn)
     {:ok, conn: conn, table: table }
   end
@@ -104,5 +104,66 @@ defmodule Rethinkdb.Rql.DocumentManipulation.Test do
 
     assert Dict.has_key?(result[:weapons], key)
     assert nil == result[:weapons][key]
+  end
+
+  test "append and prepend", var do
+    conn = var[:conn]
+    array = [1, 2, 3, 4]
+    assert array ++ [5] == r.expr(array).append(5).run!(conn)
+    assert [0 | array]  == r.expr(array).prepend(0).run!(conn)
+  end
+
+  test "remove the elements of one array from another array", var do
+    conn = var[:conn]
+    assert [1] == r.expr([1, 2, 3]).difference([2, 3]).run!(conn)
+  end
+
+  test "insert a value in array if not exist", var do
+    conn = var[:conn]
+    assert [1, 2, 3] == r.expr([1, 2, 3]).set_insert(3).run!(conn)
+    assert [1, 2, 3, 4] == r.expr([1, 2, 3]).set_insert(4).run!(conn)
+  end
+
+  test "return a intersect two arrays", var do
+    conn = var[:conn]
+    assert [2, 4] == r.expr([1, 2, 3, 4]).set_intersection([2, 5, 4]).run!(conn)
+  end
+
+  test "set_difference", var do
+    conn = var[:conn]
+    assert [1, 3] == r.expr([1, 2, 3, 4]).set_difference([2, 5, 4]).run!(conn)
+  end
+
+  test "get a simple field from an object", var do
+    {conn, table} = {var[:conn], var[:table]}
+    assert "value 1" == table[0][:value].run!(conn)
+  end
+
+  test "test a object has all of the specified fileds", var do
+    {conn, table} = {var[:conn], var[:table]}
+    assert 2  == table.has_fields(:value).count.run!(conn)
+    assert 2  == table.has_fields([:value, :id]).count.run!(conn)
+    assert [] == table.has_fields(:any).run!(conn)
+    assert table[0].has_fields(:value).run!(conn)
+  end
+
+  test "test a object has field in nested attributes", var do
+    {conn, table} = {var[:conn], var[:table]}
+    assert 1 == table.has_fields(spouse: [powers: true]).count.run!(conn)
+    assert 1 == table.has_fields(spouse: :powers).count.run!(conn)
+  end
+
+  test "manipulating arrays of elements by index", var do
+    {conn, _table} = {var[:conn], var[:table]}
+    assert [1, 2, 3]    == r.expr([1, 3]).insert_at(1, 2).run!(conn)
+    assert [1, 2, 3, 4] == r.expr([1, 4]).splice_at(1, [2, 3]).run!(conn)
+    assert [1, 3]       == r.expr([1, 2, 3]).delete_at(1).run!(conn)
+    assert [1, 4]       == r.expr([1, 2, 3, 4]).delete_at(1,3).run!(conn)
+    assert [1, 2, 3]    == r.expr([1, 3, 3]).change_at(1, 2).run!(conn)
+  end
+
+  test "get an array containing all of the objetc's keys", var do
+    {conn, table} = {var[:conn], var[:table]}
+    assert ["id", "powers", "spouse", "value"] == table[0].keys.run!(conn)
   end
 end

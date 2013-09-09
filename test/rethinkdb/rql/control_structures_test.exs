@@ -106,13 +106,6 @@ defmodule Rethinkdb.Rql.ControlStructures.Test do
     assert 2 == r.expr(12).mod(10).run!(conn)
   end
 
-  test "define append and prepend", var do
-    conn = var[:conn]
-    array = [1, 2, 3, 4]
-    assert array ++ [5] == r.expr(array).append(5).run!(conn)
-    assert [0 | array]  == r.expr(array).prepend(0).run!(conn)
-  end
-
   test "execute a js expression", var do
     conn = var[:conn]
     assert "foobar" == r.js("'foo' + 'bar'").run!(conn)

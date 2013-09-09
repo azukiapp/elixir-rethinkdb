@@ -25,9 +25,4 @@ defmodule Rethinkdb.Rql.Aggregators.Test do
     assert 1 == table.count(power: 2).run!(conn)
     assert 1 == table.count(r.row[:power].eq(1)).run!(conn)
   end
-
-  #test "computer the sum", var do
-    #{conn, table} = {var[:conn], var[:table]}
-    #pp table.sum(:power).run!(conn)
-  #end
 end
