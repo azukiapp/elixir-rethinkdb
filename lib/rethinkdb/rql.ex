@@ -429,6 +429,11 @@ defmodule Rethinkdb.Rql do
     new_term(:'KEYS', [], query)
   end
 
+  # String Manipulation
+  def match(regexp, rql() = query) do
+    new_term(:'MATCH', [regexp], query)
+  end
+
   # Control Structures
   def _do(args, expr) do
     new_term(:'FUNCALL', [func(expr), args])

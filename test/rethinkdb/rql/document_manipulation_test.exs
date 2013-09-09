@@ -136,7 +136,7 @@ defmodule Rethinkdb.Rql.DocumentManipulation.Test do
 
   test "get a simple field from an object", var do
     {conn, table} = {var[:conn], var[:table]}
-    assert "value 1" == table[0][:value].run!(conn)
+    assert "value 1" == table.order_by(:id)[0][:value].run!(conn)
   end
 
   test "test a object has all of the specified fileds", var do
