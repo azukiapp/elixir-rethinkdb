@@ -263,11 +263,6 @@ defmodule Rethinkdb.Rql do
   end
 
   # Aggregation
-  def count(filter // nil, rql() = query) do
-    if filter, do: query = filter(filter, query)
-    new_term(:'COUNT', [], query)
-  end
-
   def reduce(reduction_function, base, rql() = query) do
     new_term(:'REDUCE', [func(reduction_function)], [base: base], query)
   end
@@ -275,6 +270,29 @@ defmodule Rethinkdb.Rql do
   def distinct(rql() = query) do
     new_term(:'DISTINCT', [], query)
   end
+
+  def grouped_map_reduce(grouping, mapping, reduction, base, rql() = query) do
+    args = [func(grouping), func(mapping), func(reduction)]
+    new_term(:'GROUPED_MAP_REDUCE', args, [base: base], query)
+  end
+
+  def group_by(selectors, reduction_object, rql() = query) do
+    new_term(:'GROUPBY', [selectors, reduction_object], query)
+  end
+
+  def contains(values, rql() = query) do
+    new_term(:'CONTAINS', List.wrap(func(values)), query)
+  end
+
+  # Aggregators
+  def count(filter // nil, rql() = query) do
+    if filter, do: query = filter(filter, query)
+    new_term(:'COUNT', [], query)
+  end
+
+  def count(), do: make_obj('COUNT': nil)
+  def sum(attr), do: make_obj('SUM': attr)
+  def avg(attr), do: make_obj('AVG': attr)
 
   # Accessing Rql
   def run(conn, rql() = query) do
@@ -548,7 +566,7 @@ defmodule Rethinkdb.Rql do
   end
 
   # Function helpers
-  def func(func) do
+  def func(func) when is_function(func) do
     {_, arity} = :erlang.fun_info(func, :arity)
     arg_count  = :lists.seq(1, arity)
     func_args  = lc n inlist arg_count, do: var(n)
@@ -560,4 +578,6 @@ defmodule Rethinkdb.Rql do
 
     new_term(:'FUNC', [expr(arg_count) | args])
   end
+
+  def func(value), do: value
 end
