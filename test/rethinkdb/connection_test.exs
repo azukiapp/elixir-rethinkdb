@@ -45,11 +45,13 @@ defmodule Rethinkdb.ConnectionTest do
     assert is_record(conn, Connection)
     assert is_record(conn.socket, Socket.TCP)
     assert conn.open?
+    refute conn.close.open?
 
     conn = Connection.new.connect!
     assert is_record(conn, Connection)
     assert is_record(conn.socket, Socket.TCP)
     assert conn.open?
+    refute conn.close.open?
   end
 
   test "connect and authenticate with sucess" do
@@ -141,6 +143,7 @@ defmodule Rethinkdb.ConnectionTest do
     assert_raise Rethinkdb.RqlDriverError, e_msg, fn ->
       conn.reconnect!
     end
+    refute conn.close.open?
   end
 
   test "defines `use` to change default database" do

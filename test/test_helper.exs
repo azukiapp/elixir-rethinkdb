@@ -44,5 +44,6 @@ defmodule Rethinkdb.Case do
     end
   end
 
+  # Debug in tests
   def pp(value), do: IO.inspect(value)
 end

@@ -4,10 +4,14 @@ defmodule Rethinkdb.Rql do
 
   @type t      :: __MODULE__
   @type conn   :: Rethinkdb.Connection
-  @type url    :: binary
+  @type url    :: String.t
   @type params :: Keyword.t
   @type term   :: Term.t
-  @type name   :: binary | atom
+  @type name   :: String.t | atom
+
+  @type response :: success | error
+  @type success  :: {:ok, any | [any]}
+  @type error    :: {:error, binary, atom, any}
 
   @typep datum_arg :: :null | boolean | number | binary
   @typep expr_arg :: Dict.t | {any, any} | [expr_arg] | fun | atom | term | Term.AssocPair.t | datum_arg
@@ -39,7 +43,8 @@ defmodule Rethinkdb.Rql do
   use Rethinkdb.Rql.Access
 
   @doc """
-  Create a new connection to the database server
+  Create a new connection to the database server,
+  see `Connecton.new`.
 
   ## Example
 
@@ -53,13 +58,26 @@ defmodule Rethinkdb.Rql do
     Rethinkdb.Connection.new(opts).connect!
   end
 
-  # Accessing Rql
-  @spec run(conn, t) :: any
+  @doc """
+  Run a query on a connection.
+
+  ## Example ##
+
+  Call run on the connection with a query to execute the query.
+
+      iex> {:ok, heroes} = r.table("marvel").run(conn)
+      iex> lc hero inlist heroes, do: IO.inspect(hero)
+  """
+  @spec run(conn, t) :: response
   def run(conn, rql() = query) do
     Rethinkdb.Utils.RunQuery.run(build(query), conn)
   end
 
-  @spec run(conn, t) :: any
+  @doc """
+  Run a query on a connection, raising if an error
+  occurs, see `run`.
+  """
+  @spec run!(conn, t) :: any | [any] | no_return
   def run!(conn, rql() = query) do
     Rethinkdb.Utils.RunQuery.run!(build(query), conn)
   end
