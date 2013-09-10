@@ -5,5 +5,5 @@
   "meck": {:git, "git://github.com/eproxus/meck.git", "1286aba1cb6bbd6c9fc3f817740758b224843ee7", [{:tag, "0.8.1"}]},
   "protobuf": {:git, "git://github.com/azukiapp/elixir-protobuf.git", "59f09c232703fd3785e1b3519c6bba6dec3fee39", []},
   "resource": {:git, "git://github.com/tonyrog/resource.git", "37264ec960263cec0df8d6db0da818297b8d5771", []},
-  "socket": {:git, "git://github.com/meh/elixir-socket.git", "08a05b699a38ce88826ff8bc7f6fa821322b3d10", []},
+  "socket": {:git, "git://github.com/meh/elixir-socket.git", "774d06b4f04e05bc6445893c4cc8360290fc0b9c", [{:tag, "v0.1.3"}]},
   "uuid": {:git, "git://github.com/avtobiff/erlang-uuid.git", "d7f64acd8412b79e854b8c95f4c66d8e071de8d9", [{:tag, "v0.4.4"}]} ]
