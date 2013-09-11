@@ -27,7 +27,6 @@ defmodule Rethinkdb.Mixfile do
   def deps(:prod) do
     [
       { :protobuf, github: "azukiapp/elixir-protobuf" },
-      { :socket, github: "meh/elixir-socket", tag: "v0.1.3" },
     ]
   end
 
