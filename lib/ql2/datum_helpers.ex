@@ -6,7 +6,7 @@ defmodule QL2.DatumHelpers do
       Record.import __MODULE__, as: :datum
 
       @typep json_term :: :null | boolean | number | binary | Dict.t | [json_term]
-      @typep t :: __MODULE__.t
+      @typep t :: __MODULE__
 
       @spec value(t) :: json_term
       def value(datum(type: :'R_NULL')) do

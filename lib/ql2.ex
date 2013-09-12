@@ -8,6 +8,7 @@ defmodule QL2 do
   # Load a extra modules methods
   use_in :Datum, QL2.DatumHelpers
   use_in :Response, QL2.ResponseHelpers
+  use_in :Query, QL2.QueryHelpers
 
   @doc """
   Helper to get a proto version
