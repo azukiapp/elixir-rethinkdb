@@ -53,6 +53,11 @@ defmodule Rethinkdb.Connection do
     :gen_server.call(pid, :options)
   end
 
+  @spec db(t) :: String.t
+  def db(conn(pid: pid) = conn) do
+    :gen_server.call(pid, :db)
+  end
+
   @spec use(String.t, t) :: Option.t
   def use(database, conn(pid: pid) = conn) do
     :ok = :gen_server.cast(pid, {:use, database})
@@ -99,6 +104,10 @@ defmodule Rethinkdb.Connection do
 
   def handle_call(:options, _from, State[options: options] = state) do
     { :reply, options, state}
+  end
+
+  def handle_call(:db, _from, State[options: Options[db: db]] = state) do
+    { :reply, db, state}
   end
 
   def handle_call({:run, Term[] = term}, _from,

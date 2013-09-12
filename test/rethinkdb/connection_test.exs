@@ -93,6 +93,13 @@ defmodule Rethinkdb.Connection.Test do
     end
   end
 
+  test "return a default db to connection" do
+    with_mock Socket, mock_socket do
+      conn = Connection.connect!(options)
+      assert options.db == conn.db
+    end
+  end
+
   test "change default database" do
     with_mock Socket, mock_socket do
       conn = Connection.connect!(options)
