@@ -8,10 +8,6 @@ defmodule Rethinkdb.Connection.Socket.Test do
 
   def options, do: Options.new
 
-  setup_all do
-    {:ok, opts: Options.new}
-  end
-
   test "open a socket with a opts" do
     socket = Socket.connect!(options)
     assert is_record(socket, Socket)
@@ -27,7 +23,7 @@ defmodule Rethinkdb.Connection.Socket.Test do
   test "open a socket with options" do
     with_mock :gen_tcp, [:unstick, :passthrough], [] do
       socket = Socket.connect!(options)
-      socket_opts = [packet: :raw, active: false]
+      socket_opts = [:binary | [packet: :raw, active: false]]
 
       assert is_record(socket, Socket)
       assert called :gen_tcp.connect('localhost', options.port, socket_opts)

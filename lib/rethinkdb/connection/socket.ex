@@ -20,7 +20,7 @@ defmodule Rethinkdb.Connection.Socket do
   def connect!(Options[host: address, port: port]) do
     address = String.to_char_list!(address)
 
-    opts = [packet: :raw, active: false]
+    opts = [:binary | [packet: :raw, active: false]]
     case :gen_tcp.connect(address, port, opts) do
       { :ok, socket }  -> record(socket: socket)
       { :error, code } -> raise Error, code: code
