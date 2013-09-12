@@ -6,11 +6,9 @@ defmodule Rethinkdb.Supervisor do
   end
 
   def init([]) do
-    Rethinkdb.Server = :ets.new(Rethinkdb.Server, [:ordered_set, :public, :named_table, {:read_concurrency, :true}])
-
     children = [
       # Define workers and child supervisors to be supervised
-      worker(Rethinkdb.Server, [])
+      supervisor(Rethinkdb.Connection.Supervisor, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/Supervisor.Behaviour.html

@@ -1,4 +1,5 @@
 defmodule Rethinkdb.Connection.Socket do
+  alias Rethinkdb.Connection.Options
 
   defrecordp :record, __MODULE__, socket: nil
   @type t :: __MODULE__
@@ -16,12 +17,7 @@ defmodule Rethinkdb.Connection.Socket do
   end
 
   # Open connect in passive mode
-  @spec connect!(String.t | URI.Info.t) :: t | no_return
-  def connect!(uri) when is_list(uri) or is_binary(uri) do
-    connect!(URI.parse(uri))
-  end
-
-  def connect!(URI.Info[scheme: "tcp", host: address, port: port]) do
+  def connect!(Options[host: address, port: port]) do
     address = String.to_char_list!(address)
 
     case :gen_tcp.connect(address, port, [packet: :raw]) do

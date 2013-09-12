@@ -1,175 +1,71 @@
-defmodule Rethinkdb.ConnectionTest do
-  use Rethinkdb.Case
+defmodule Rethinkdb.Connection.Test do
+  use Rethinkdb.Case, async: false
+
   alias Rethinkdb.Connection
+  alias Rethinkdb.Connection.State
+  alias Rethinkdb.Connection.Options
+  alias Rethinkdb.Connection.Socket
+  alias Rethinkdb.Connection.Supervisor
 
-  import ExUnit.CaptureIO
+  import Mock
 
-  test "check a default values for new connection" do
-    conn = Connection.new
+  def options, do: Options.new
 
-    assert "localhost" == conn.host
-    assert 28015 == conn.port
-    assert ""    == conn.authKey
-    assert 20    == conn.timeout
-    assert nil   == conn.db
-    assert nil   == conn.socket
-    assert false == conn.open?
+  def mock_connect(mocks // []) do
+    Dict.merge([
+      connect!: fn _ -> {Socket} end,
+      process!: fn _, {Socket} -> {Socket} end,
+      open?:    fn {Socket} -> true end,
+    ], mocks)
   end
 
-  test "support create connect with uri" do
-    conn = Connection.new("rethinkdb://auth_key@remote:28106/rethinkdb_test")
-
-    assert "remote" == conn.host
-    assert 28106    == conn.port
-    assert "rethinkdb_test" == conn.db
-    assert "auth_key" == conn.authKey
-
-    default = Connection.new
-    conn    = Connection.new("rethinkdb://remote:28106")
-    assert default.db == conn.db
-    assert default.authKey == conn.authKey
-
-    conn = Connection.new("rethinkdb://remote")
-    assert default.port == conn.port
+  test "open socket and save in state" do
+    opts = options
+    {:ok, State[socket: socket, options: ^opts]} = Connection.init(options)
+    assert socket.open?
+    socket.close
   end
 
-  test "return error for invalid uri connect" do
-    {:error, msg} = Connection.new("")
-    assert is_binary(msg)
-    {:error, msg} = Connection.new("http://example.com")
-    assert is_binary(msg)
+  test "stop if fail in connect" do
+    assert {:stop, "connection refused"} ==
+      Connection.init(Options.new(port: 1))
   end
 
-  test "connect and logs in" do
-    {:ok, conn} = Connection.new.connect
-    assert is_record(conn, Connection)
-    assert is_record(conn.socket, Socket.TCP)
-    assert conn.open?
-    refute conn.close.open?
-
-    conn = Connection.new.connect!
-    assert is_record(conn, Connection)
-    assert is_record(conn.socket, Socket.TCP)
-    assert conn.open?
-    refute conn.close.open?
-  end
-
-  test "connect and authenticate with sucess" do
-    conn = Connection.new("rethinkdb://auth_key@localhost")
-    Exmeck.mock_run do
-      mock_authenticate(mock)
-      conn = conn.connect!(mock.module)
-
-      version  = :binary.encode_unsigned(0x723081e1, :little)
-      auth_key = "auth_key"
-      auth_key = [version, <<iolist_size(auth_key) :: [size(32), little]>>, auth_key]
-
-      args = [conn.host, conn.port, [
-        packet: :raw,
-        active: false
-      ]]
-
-      assert conn.socket == mock.module
-      assert 1 = mock.num_calls(:connect, args)
-      assert 1 = mock.num_calls(:send, [auth_key])
-      assert 1 = mock.num_calls(:recv!, [0])
+  test "links the current process to the socket" do
+    with_mock Socket, mock_connect do
+      {:ok, State[]} = Connection.init(options)
+      assert called Socket.process!(self, {Socket})
     end
   end
 
-  test ":connect fail" do
-    conn = Connection.new("rethinkdb://localhost:1")
-    assert { :error, "Could not connect to #{conn.host}:#{conn.port}" } == conn.connect
-  end
+  test_with_mock "start connect with supervisor", Socket, mock_connect do
+    with_mock Supervisor, [:passthrough], [] do
+      {:ok, conn} = Connection.connect(options)
+      assert is_record(conn, Connection)
+      assert called Supervisor.start_worker(options)
+    end
 
-  test ":connect! fail" do
-    conn = Connection.new("rethinkdb://localhost:1")
-    assert_raise Rethinkdb.RqlDriverError, fn ->
-      conn.connect!
+    with_mock Supervisor, [:passthrough], [] do
+      conn = Connection.connect!(options)
+      assert is_record(conn, Connection)
+      assert called Supervisor.start_worker(options)
     end
   end
 
-  test "authenticate fail" do
-    Exmeck.mock_run do
-      msg = "authenticate error"
-      mock_authenticate(mock, <<msg :: binary,0>>)
-      assert capture_io(fn ->
-        assert_raise Rethinkdb.RqlDriverError, %r/#{msg}/, fn ->
-          Connection.new.connect!(mock.module)
-        end
-      end) =~ %r/#{msg}/
+  test "bad connection opts return a error ou raise a exception" do
+    opts = Options.new(port: 1)
+    {:error, _} = Connection.connect(opts)
+
+    assert_raise Rethinkdb.RqlDriverError, "Failed open connection", fn ->
+      Connection.connect!(opts)
     end
   end
 
-  test "receive data with loop" do
-    Exmeck.mock_run do
-      mock_authenticate(mock, fn _ ->
-        mock.stubs(:recv!, [:_], << "SS", 0 >>)
-        << "SUCCE" >>
-      end)
-
-      assert mock.module == Connection.new.connect!(mock.module).socket
-    end
-  end
-
-  test "should not authenticate if is opened" do
-    Exmeck.mock_run do
-      mock_authenticate(mock)
-      conn = Connection.new.connect!(mock.module)
-      assert_raise Rethinkdb.RqlDriverError, %r/try to reconnect/, fn ->
-        conn.connect!
-      end
-    end
-  end
-
-  test "implements close" do
-    conn = Connection.new.connect!
-    assert is_tuple(conn.socket.local!)
-    conn = conn.close
-    refute conn.open?
-    assert_raise Socket.TCP.Error, fn ->
-      conn.socket.local!
-    end
-  end
-
-  test "support to reconnect and reconnect!" do
-    e_msg = "Connection is open"
-
-    {:ok, conn} = Connection.new.connect!.close.reconnect
-    assert conn.open?
-    assert {:error, e_msg} == conn.reconnect
-
-    conn = conn.close.reconnect!
-    assert conn.open?
-    assert_raise Rethinkdb.RqlDriverError, e_msg, fn ->
-      conn.reconnect!
-    end
-    refute conn.close.open?
-  end
-
-  test "defines `use` to change default database" do
-    conn = Connection.new.db "test"
-    assert "test" == conn.db
-
-    conn = conn.use("test2")
-    assert "test2" == conn.db
-  end
-
-  test "defined a method nextToken to return a unique token" do
-    conn = Connection.new()
-    {token1, token2} = {conn.nextToken, conn.nextToken}
-    assert is_integer(token1)
-    assert token1 != token2
-  end
-
-  defp mock_authenticate(mock, response // <<"SUCCESS",0>>) do
-    mock.stubs(:connect, [:_, :_, :_], {:ok, mock.module})
-    mock.stubs(:send, [:_], :ok)
-    mock.stubs(:local, [], {:ok, :local })
-    if is_function(response) do
-      mock.stubs(:recv!, response)
-    else
-      mock.stubs(:recv!, [:_], response)
+  test "return a socket status to call open?" do
+    with_mock Socket, mock_connect do
+      conn = Connection.connect!(options)
+      assert conn.open?
+      assert called Socket.open?({Socket})
     end
   end
 end
-

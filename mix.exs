@@ -12,7 +12,7 @@ defmodule Rethinkdb.Mixfile do
   def application do
     [
       mod: { Rethinkdb.App, [] },
-      applications: [:socket],
+      applications: [],
       env: Keyword.merge([{:timeout, 30 * 1000}], env(Mix.env))
     ]
   end
@@ -32,7 +32,8 @@ defmodule Rethinkdb.Mixfile do
 
   def deps(:test) do
     deps(:prod) ++ [
-      {:exmeck, github: "azukiapp/exmeck"},
+      {:meck, github: "eproxus/meck", tag: "0.8.1", override: true},
+      {:mock, github: "jjh42/mock"}
     ]
   end
 

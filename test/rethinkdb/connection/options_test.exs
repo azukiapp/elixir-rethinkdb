@@ -2,8 +2,6 @@ defmodule Rethinkdb.Connection.Options.Test do
   use Rethinkdb.Case
   alias Rethinkdb.Connection.Options, as: Options
 
-  import Exmeck
-
   test "check a default values for new optionsection" do
     options = Options.new
 

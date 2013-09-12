@@ -1,6 +1,6 @@
-[ "ex_doc": {:git, "git://github.com/elixir-lang/ex_doc.git", "81c74209a90ec5635c258e20e8767fb469262e8c", []},
-  "exmeck": {:git, "git://github.com/azukiapp/exmeck.git", "b11dabbe02a1ecd49b4636fe92862711d3bec3ff", []},
+[ "ex_doc": {:git, "git://github.com/elixir-lang/ex_doc.git", "c13d10aaed19ef05c2c8362b9b555926e9770902", []},
   "gpb": {:git, "git://github.com/tomas-abrahamsson/gpb.git", "e07d6dae832120ce26276fac30eb79b6d94b0054", []},
   "meck": {:git, "git://github.com/eproxus/meck.git", "1286aba1cb6bbd6c9fc3f817740758b224843ee7", [{:tag, "0.8.1"}]},
+  "mock": {:git, "git://github.com/jjh42/mock.git", "e54a8f8ac3b69b5a610399f7fb5efe65446526eb", []},
   "protobuf": {:git, "git://github.com/azukiapp/elixir-protobuf.git", "59f09c232703fd3785e1b3519c6bba6dec3fee39", []},
   "uuid": {:git, "git://github.com/avtobiff/erlang-uuid.git", "d7f64acd8412b79e854b8c95f4c66d8e071de8d9", [{:tag, "v0.4.4"}]} ]
