@@ -57,7 +57,7 @@ defmodule Rethinkdb.Rql do
   """
   @spec connect(params | url) :: conn
   def connect(opts // []) do
-    opts = Connecton.Options.new(opts)
+    opts = Connection.Options.new(opts)
     Connection.connect!(opts)
   end
 
@@ -73,7 +73,7 @@ defmodule Rethinkdb.Rql do
   """
   @spec run(conn, t) :: response
   def run(conn, rql() = query) do
-    conn.run(query)
+    conn.run(build(query))
   end
 
   @doc """
@@ -82,6 +82,6 @@ defmodule Rethinkdb.Rql do
   """
   @spec run!(conn, t) :: any | [any] | no_return
   def run!(conn, rql() = query) do
-    conn.run!(query)
+    conn.run!(build(query))
   end
 end
