@@ -1,4 +1,6 @@
 defmodule Rethinkdb.Rql do
+  alias Rethinkdb.Connection
+
   # Geral record
   defrecordp :rql, __MODULE__, terms: []
 
@@ -55,7 +57,8 @@ defmodule Rethinkdb.Rql do
   """
   @spec connect(params | url) :: conn
   def connect(opts // []) do
-    Rethinkdb.Connection.new(opts).connect!
+    opts = Connecton.Options.new(opts)
+    Connection.connect!(opts)
   end
 
   @doc """
@@ -70,7 +73,7 @@ defmodule Rethinkdb.Rql do
   """
   @spec run(conn, t) :: response
   def run(conn, rql() = query) do
-    Rethinkdb.Utils.RunQuery.run(build(query), conn)
+    conn.run(query)
   end
 
   @doc """
@@ -79,6 +82,6 @@ defmodule Rethinkdb.Rql do
   """
   @spec run!(conn, t) :: any | [any] | no_return
   def run!(conn, rql() = query) do
-    Rethinkdb.Utils.RunQuery.run!(build(query), conn)
+    conn.run!(query)
   end
 end
