@@ -2,7 +2,7 @@ defmodule Rethinkdb do
   alias Rethinkdb.Connection
   alias Rethinkdb.Rql
 
-  defexception RqlDriverError, msg: nil do
+  defexception RqlDriverError, msg: nil, backtrace: nil do
     def message(RqlDriverError[msg: msg]) do
       msg
     end
