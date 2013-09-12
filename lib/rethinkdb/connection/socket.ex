@@ -20,20 +20,26 @@ defmodule Rethinkdb.Connection.Socket do
   def connect!(Options[host: address, port: port]) do
     address = String.to_char_list!(address)
 
-    case :gen_tcp.connect(address, port, [packet: :raw]) do
-      { :ok, socket } ->
-        record(socket: socket)
-      { :error, code } ->
-        raise Error, code: code
+    opts = [packet: :raw, active: false]
+    case :gen_tcp.connect(address, port, opts) do
+      { :ok, socket }  -> record(socket: socket)
+      { :error, code } -> raise Error, code: code
     end
   end
 
-  @spec process!(pid, t) :: no_return
+  @spec process!(pid, t) :: t | no_return
   def process!(pid, record(socket: socket) = record) do
     case :gen_tcp.controlling_process(socket, pid) do
       :ok -> record
-      {:error, msg} ->
-        raise Error, msg: msg
+      {:error, msg} -> raise Error, msg: msg
+    end
+  end
+
+  @spec active!(t) :: :t | no_return
+  def active!(mode // true, record(socket: socket) = record) do
+    case :inet.setopts(socket, active: mode) do
+      :ok -> record
+      {:error, code} -> raise Error, code: code
     end
   end
 
@@ -46,10 +52,26 @@ defmodule Rethinkdb.Connection.Socket do
   def send!(data, record) do
     case send(data, record) do
       :ok -> :ok
-      {:error, :closed} ->
-        raise Error, msg: "Socket is closed"
-      {:error, code} ->
-        raise Error, code: code
+      other -> error_raise(other)
+    end
+  end
+
+  @spec recv!(number, t) :: binary
+  def recv!(length // 0, timeout // :infinity, record(socket: socket)) do
+    case :gen_tcp.recv(socket, length, timeout) do
+      {:ok, data} -> data
+      other -> error_raise(other)
+    end
+  end
+
+  ## Loop to recv and accumulate data from the socket
+  @spec recv_until_null!(binary, t) :: binary
+  def recv_until_null!(acc // <<>>, record() = record) do
+    result = << acc :: binary, record.recv!(0) :: binary >>
+    case String.slice(result, -1, 1) do
+      << 0 >> ->
+        String.slice(result, 0, iolist_size(result) - 1)
+      _ -> recv_until_null!(result, record)
     end
   end
 
@@ -64,5 +86,13 @@ defmodule Rethinkdb.Connection.Socket do
   @spec close(t) :: t
   def close(record(socket: socket) = record) do
     :gen_tcp.close(socket); record
+  end
+
+  defp error_raise({:error, :closed}) do
+    raise Error, msg: "Socket is closed"
+  end
+
+  defp error_raise({:error, code}) do
+    raise Error, code: code
   end
 end
