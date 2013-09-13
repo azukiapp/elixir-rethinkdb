@@ -22,6 +22,7 @@ defmodule Rethinkdb.Connection.Test do
       open?:    fn {Socket}    -> true end,
       send!:    fn _, {Socket} -> :ok end,
       recv_until_null!:  fn {Socket} -> "SUCCESS" end,
+      close:    fn {Socket} -> {Socket} end,
     ], mocks)
   end
 
@@ -130,5 +131,28 @@ defmodule Rethinkdb.Connection.Test do
     assert_raise RqlRuntimeError, %r/RUNTIME_ERROR.*/, fn ->
       conn.run!(r.expr(1).add("2").build)
     end
+  end
+
+  test "set a connection a default connection and support run with this" do
+    conn = Connection.connect!(options)
+    assert conn == conn.repl
+    assert conn == Connection.get_repl
+    assert {:ok, 1} == Connection.run(r.expr(1).build)
+    assert 1 == Connection.run!(r.expr(1).build)
+  end
+
+  test "close socket in terminate" do
+    with_mock Socket, mock_socket do
+      conn = Connection.connect!(options)
+      conn.close
+      assert called Socket.close(:_)
+    end
+  end
+
+  test "remove from repl after close" do
+    conn = Connection.connect!(options).repl
+    assert conn == Connection.get_repl
+    conn.close
+    assert {:error, "Not have a default connection"} == Connection.get_repl
   end
 end

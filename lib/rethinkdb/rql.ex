@@ -77,11 +77,36 @@ defmodule Rethinkdb.Rql do
   end
 
   @doc """
+  Run a query in default connection
+
+  ## Example ##
+
+  Call run on the connection with a query to execute the query.
+
+      iex> r.connect.repl
+      iex> {:ok, heroes} = r.table("marvel").run
+      iex> lc hero inlist heroes, do: IO.inspect(hero)
+  """
+  @spec run(t) :: response
+  def run(rql() = query) do
+    Connection.run(build(query))
+  end
+
+  @doc """
   Run a query on a connection, raising if an error
   occurs, see `run`.
   """
   @spec run!(conn, t) :: any | [any] | no_return
   def run!(conn, rql() = query) do
     conn.run!(build(query))
+  end
+
+  @doc """
+  Run a query in default connection, raising if on error
+  occurs, see `run`.
+  """
+  @spec run!(t) :: any | [any] | no_return
+  def run!(rql() = query) do
+    Connection.run!(build(query))
   end
 end
