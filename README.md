@@ -35,23 +35,41 @@ end
 
 ## Usage in iex
 
+Open connection and create a table:
+
 ```elixir
 iex> Rethinkdb.start
 iex> use Rethinkdb
 iex> conn = rr.connect(db: test)
 iex> rr.table_create("marvel", primary_key: "name").run(conn)
 {:ok, #HashDict<[created: 1.0]>}
-iex> batam = [name: "batman", rich: true, cars: [1, 2, 3]]
+```
+
+Insert a document
+```elixir
+iex> batman = [name: "batman", rich: true, cars: [1, 2, 3]]
 iex> rr.table("marvel").insert(batman).run!(conn)
 #HashDict<[deleted: 0.0, errors: 0.0, inserted: 1.0, replaced: 0.0,
   skipped: 0.0, unchanged: 0.0]>
+```
+
+Making life easier:
+```elixir
 iex> conn.repl # now this connection is default
 iex> table = rr.table("marvel")
+```
+
+Update document:
+```elixir
 iex> table.get("batman").update(age: 30).run!
 iex> table.get("batman").run!
 #HashDict<[age: 30.0, cars: [1.0, 2.0, 3.0], name: "batman", rich: true]>
 iex> table[0]["name"].run!
 "batman"
+```
+
+Map a document with function:
+```elixir
 iex> table.map(fn hero ->
   hero[:name].add(" ").add(hero[:age].coerce_to("string"))
 end).run!
