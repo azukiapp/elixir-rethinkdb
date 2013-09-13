@@ -9,9 +9,31 @@ Current version was tested: RethinkDB 1.8.1
 
 Add the following to your list of dependencies in mix.exs:
 
+```elixir
 { :rethinkdb, github: "azukiapp/elixir-rethinkdb" }
+```
 
-## Usage
+## Example
+
+```elixir
+defmodule Simple.Heros do
+  use Rethinkdb
+
+  def get(name) do
+    r.table("marvel").get(name).run!
+  end
+end
+
+defmodule Simple.App do
+  use Rethinkdb
+
+  def start do
+    r.connect("rethinkdb://localhost:28015/test").repl
+  end
+end
+```
+
+## Usage in iex
 
 ```elixir
 iex> Rethinkdb.start
