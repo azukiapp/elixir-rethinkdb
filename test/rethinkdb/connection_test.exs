@@ -11,8 +11,6 @@ defmodule Rethinkdb.Connection.Test do
 
   alias QL2.Query
 
-  import Mock
-
   def options, do: Options.new
 
   def mock_socket(mocks // []) do
@@ -21,7 +19,7 @@ defmodule Rethinkdb.Connection.Test do
       process!: fn _, {Socket} -> {Socket} end,
       open?:    fn {Socket}    -> true end,
       send!:    fn _, {Socket} -> :ok end,
-      recv_until_null!:  fn {Socket} -> "SUCCESS" end,
+      recv_until_null!:  fn _, {Socket} -> "SUCCESS" end,
       close:    fn {Socket} -> {Socket} end,
     ], mocks)
   end
@@ -154,5 +152,13 @@ defmodule Rethinkdb.Connection.Test do
     assert conn == Connection.get_repl
     conn.close
     assert {:error, "Not have a default connection"} == Connection.get_repl
+  end
+
+  test "forward a timeout to the socket" do
+    with_mock Socket, [:passthrough], [] do
+      conn = Connection.connect!(options)
+      r.expr(10).run(conn)
+      assert called Socket.recv!(:_, options.timeout * 1000, :_)
+    end
   end
 end

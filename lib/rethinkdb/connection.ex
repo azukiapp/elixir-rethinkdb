@@ -157,8 +157,11 @@ defmodule Rethinkdb.Connection do
   end
 
   def handle_call({:run, Term[] = term}, _from,
-    State[next_token: token, socket: socket, options: Options[db: db]] = state) do
-    response = send_and_recv(Query.new_start(term, db, token), socket)
+    State[next_token: token, socket: socket,
+      options: Options[db: db, timeout: timeout]
+    ] = state) do
+
+    response = send_and_recv(Query.new_start(term, db, token), socket, timeout)
     { :reply, response, state.next_token(token + 1) }
   end
 
@@ -171,16 +174,16 @@ defmodule Rethinkdb.Connection do
     { :stop, reason, state }
   end
 
-  defp send_and_recv(query, socket) do
+  defp send_and_recv(query, socket, timeout) do
     socket.send!(query.encode_to_send)
-    Response.decode(recv(socket)).value
+    Response.decode(recv(socket, timeout)).value
   rescue
     x in [Socket.Error] ->
       {:error, x.message}
   end
 
-  defp recv(socket) do
-    length = :binary.decode_unsigned(socket.recv!(4), :little)
-    socket.recv!(length)
+  defp recv(socket, timeout) do
+    length = :binary.decode_unsigned(socket.recv!(4, timeout * 1000), :little)
+    socket.recv!(length, timeout * 1000)
   end
 end

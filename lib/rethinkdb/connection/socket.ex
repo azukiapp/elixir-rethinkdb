@@ -65,13 +65,18 @@ defmodule Rethinkdb.Connection.Socket do
   end
 
   ## Loop to recv and accumulate data from the socket
-  @spec recv_until_null!(binary, t) :: binary
-  def recv_until_null!(acc // <<>>, record() = record) do
-    result = << acc :: binary, record.recv!(0) :: binary >>
+  @spec recv_until_null!(number, t) :: binary
+  def recv_until_null!(timeout, record() = record) when is_number(timeout) do
+    recv_until_null!(<<>>, timeout, record)
+  end
+
+  @spec recv_until_null!(binary, number, t) :: binary
+  defp recv_until_null!(acc, timeout, record() = record) do
+    result = << acc :: binary, record.recv!(0, timeout) :: binary >>
     case String.slice(result, -1, 1) do
       << 0 >> ->
         String.slice(result, 0, iolist_size(result) - 1)
-      _ -> recv_until_null!(result, record)
+      _ -> recv_until_null!(result, timeout, record)
     end
   end
 

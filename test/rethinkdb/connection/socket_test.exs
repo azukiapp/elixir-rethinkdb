@@ -4,8 +4,6 @@ defmodule Rethinkdb.Connection.Socket.Test do
   alias Rethinkdb.Connection.Socket
   alias Rethinkdb.Connection.Options
 
-  import Mock
-
   def options, do: Options.new
 
   test "open a socket with a opts" do
@@ -114,8 +112,8 @@ defmodule Rethinkdb.Connection.Socket.Test do
 
   test "recv and accumate data from the socket" do
     mocks = [
-      recv: fn :socket, 0, :infinity ->
-        :meck.expect(:gen_tcp, :recv, fn :socket, 0, :infinity ->
+      recv: fn :socket, 0, 10 ->
+        :meck.expect(:gen_tcp, :recv, fn :socket, 0, 10 ->
           {:ok, << "SS", 0 >> }
         end)
         {:ok, << "SUCCE" >>}
@@ -123,12 +121,12 @@ defmodule Rethinkdb.Connection.Socket.Test do
     ]
     with_mock :gen_tcp, [:unstick], mock_socket(mocks) do
       socket = Socket.connect!(options)
-      assert "SUCCESS" == socket.recv_until_null!
-      assert called :gen_tcp.recv(:socket, 0, :infinity)
+      assert "SUCCESS" == socket.recv_until_null!(10)
+      assert called :gen_tcp.recv(:socket, 0, 10)
     end
 
     assert_raise Socket.Error, "Socket is closed", fn ->
-      Socket.connect!(options).close.recv_until_null!
+      Socket.connect!(options).close.recv_until_null!(10)
     end
   end
 

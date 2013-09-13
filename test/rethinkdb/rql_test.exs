@@ -4,8 +4,6 @@ defmodule Rethinkdb.Rql.Test do
 
   alias Rethinkdb.Connection
 
-  import Mock
-
   setup_all do
     conn = r.connect(db: "test")
     {:ok, conn: conn }

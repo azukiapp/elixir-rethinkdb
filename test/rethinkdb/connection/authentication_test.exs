@@ -1,5 +1,5 @@
 defmodule Rethinkdb.Connection.Authentication.Test do
-  use Rethinkdb.Case
+  use Rethinkdb.Case, async: false
   alias Rethinkdb.Connection.Socket
   alias Rethinkdb.Connection.Options
   alias Rethinkdb.Connection.Authentication
@@ -8,7 +8,10 @@ defmodule Rethinkdb.Connection.Authentication.Test do
     options = Options.new
     socket  = Socket.connect!(options)
 
-    assert :ok == Authentication.auth!(socket, options)
+    with_mock Socket, [:passthrough], [] do
+      assert :ok == Authentication.auth!(socket, options)
+      assert called Socket.recv!(:_, options.timeout * 1000, :_)
+    end
   end
 
   test "fail in authentication" do
