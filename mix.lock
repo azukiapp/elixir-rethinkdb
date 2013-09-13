@@ -2,4 +2,4 @@
   "gpb": {:git, "git://github.com/tomas-abrahamsson/gpb.git", "e07d6dae832120ce26276fac30eb79b6d94b0054", []},
   "meck": {:git, "git://github.com/eproxus/meck.git", "1286aba1cb6bbd6c9fc3f817740758b224843ee7", [{:tag, "0.8.1"}]},
   "mock": {:git, "git://github.com/jjh42/mock.git", "e54a8f8ac3b69b5a610399f7fb5efe65446526eb", []},
-  "protobuf": {:git, "git://github.com/azukiapp/elixir-protobuf.git", "59f09c232703fd3785e1b3519c6bba6dec3fee39", []} ]
+  "protobuf": {:git, "git://github.com/azukiapp/elixir-protobuf.git", "7831053bb59c14359d91b6fea6e22fabd7104ac4", [{:tag, "0.0.2"}]} ]
