@@ -22,6 +22,10 @@ defmodule Rethinkdb do
     helper(__CALLER__.module)
   end
 
+  def start do
+    Rethinkdb.App.start
+  end
+
   # Import rr in Iex to not conflict Iex.Helper.r
   defp helper(module) do
     method = module && :r || :rr

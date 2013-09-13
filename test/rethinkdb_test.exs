@@ -1,5 +1,5 @@
 defmodule RethinkdbTest do
-  use ExUnit.Case
+  use Rethinkdb.Case
   use Rethinkdb
 
   test "defined a function to get a AST" do
@@ -15,6 +15,13 @@ defmodule RethinkdbTest do
     message = "foobar not implemented yet"
     assert_raise RqlDriverError, message, fn ->
       RqlDriverError.not_implemented(:foobar)
+    end
+  end
+
+  test "start is alias to application start" do
+    with_mock Rethinkdb.App, [:passthrough], [] do
+      :ok = Rethinkdb.start
+      assert called Rethinkdb.App.start
     end
   end
 end
