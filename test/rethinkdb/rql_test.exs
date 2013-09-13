@@ -4,11 +4,6 @@ defmodule Rethinkdb.Rql.Test do
 
   alias Rethinkdb.Connection
 
-  setup_all do
-    conn = r.connect(db: "test")
-    {:ok, conn: conn }
-  end
-
   test "defines a terms to generate a ql2 terms" do
     rql  = r.expr(1)
     term = QL2.Term.new(type: :'DATUM', datum: QL2.Datum.from_value(1))
@@ -28,26 +23,37 @@ defmodule Rethinkdb.Rql.Test do
     end
   end
 
-  test "use default connection to execute a query" do
-    r.connect.repl
-    assert {:ok, 10} == r.expr(10).run
-    assert 10 == r.expr(10).run!
-  end
+  #test "use default connection to execute a query" do
+    #conn = r.connect.repl
+    #assert {:ok, 10} == r.expr(10).run
+    #assert 10 == r.expr(10).run!
+  #end
 
   test "return a connection with parameters" do
     conn = r.connect(host: "localhost")
     assert "localhost" == conn.options.host
     assert conn.open?
+    conn.close
 
     conn = r.connect("rethinkdb://localhost")
     assert "localhost" == conn.options.host
     assert conn.open?
+    conn.close
   end
 
   test "return a connection record" do
     conn = r.connect
     assert is_record(conn, Rethinkdb.Connection)
     assert conn.open?
+    conn.close
   end
+
+  #test "run concurrent queries" do
+    #my   = self
+    #spawn(fn -> my <- r.js("while(true) {}", timeout: 1).run end)
+    #spawn(fn -> my <- r.js("10").run end)
+    #assert {:ok, 10} == receive(do: (any -> any))
+    #{:error, _, _, _} = receive(do: (any -> any))
+  #end
 end
 

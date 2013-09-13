@@ -18,7 +18,7 @@ defmodule Rethinkdb.Mixfile do
   end
 
   def env(:test) do
-    [rethinkdb_uri: "rethinkdb://localhost:28015/test_elixir-rethinkdb"]
+    [rethinkdb_uri: "rethinkdb://localhost:28015/elixir_drive_test"]
   end
 
   def env(_), do: []

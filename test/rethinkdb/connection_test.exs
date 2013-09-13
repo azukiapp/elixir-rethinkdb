@@ -24,13 +24,6 @@ defmodule Rethinkdb.Connection.Test do
     ], mocks)
   end
 
-  test "open socket and save in state" do
-    opts = options
-    {:ok, State[socket: socket, options: ^opts]} = Connection.init(options)
-    assert socket.open?
-    socket.close
-  end
-
   test "stop if fail in connect" do
     assert {:stop, "connection refused"} ==
       Connection.init(Options.new(port: 1))
@@ -59,12 +52,14 @@ defmodule Rethinkdb.Connection.Test do
       {:ok, conn} = Connection.connect(options)
       assert is_record(conn, Connection)
       assert called Supervisor.start_worker(options)
+      conn.close
     end
 
     with_mock Supervisor, [:passthrough], [] do
       conn = Connection.connect!(options)
       assert is_record(conn, Connection)
       assert called Supervisor.start_worker(options)
+      conn.close
     end
   end
 
@@ -117,6 +112,7 @@ defmodule Rethinkdb.Connection.Test do
       assert [1, 2, 3] == conn.run!(term)
 
       assert called Socket.send!(query.encode_to_send, :_)
+      conn.close
     end
   end
 
@@ -129,14 +125,19 @@ defmodule Rethinkdb.Connection.Test do
     assert_raise RqlRuntimeError, %r/RUNTIME_ERROR.*/, fn ->
       conn.run!(r.expr(1).add("2").build)
     end
+
+    conn.close
   end
 
   test "set a connection a default connection and support run with this" do
-    conn = Connection.connect!(options)
-    assert conn == conn.repl
-    assert conn == Connection.get_repl
-    assert {:ok, 1} == Connection.run(r.expr(1).build)
-    assert 1 == Connection.run!(r.expr(1).build)
+    save_repl do
+      conn = Connection.connect!(options)
+      assert conn == conn.repl
+      assert conn == Connection.get_repl
+      assert {:ok, 1} == Connection.run(r.expr(1).build)
+      assert 1 == Connection.run!(r.expr(1).build)
+      conn.close
+    end
   end
 
   test "close socket in terminate" do
@@ -148,10 +149,12 @@ defmodule Rethinkdb.Connection.Test do
   end
 
   test "remove from repl after close" do
-    conn = Connection.connect!(options).repl
-    assert conn == Connection.get_repl
-    conn.close
-    assert {:error, "Not have a default connection"} == Connection.get_repl
+    save_repl do
+      conn = Connection.connect!(options).repl
+      assert conn == Connection.get_repl
+      conn.close
+      assert {:error, "Not have a default connection"} == Connection.get_repl
+    end
   end
 
   test "forward a timeout to the socket" do

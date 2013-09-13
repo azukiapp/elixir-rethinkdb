@@ -3,7 +3,7 @@ defmodule Rethinkdb.Rql.Joins.Test do
   use Rethinkdb
 
   setup_all do
-    {conn, [dc, marvel]} = connect(["join_dc", "join_marvel"], primary_key: "superhero")
+    [tb_dc, tb_marvel] = table_to_test(["join_dc", "join_marvel"], primary_key: "superhero")
     data = [
       'join_dc': [
         [superhero: "Superman", strength: 10],
@@ -18,17 +18,17 @@ defmodule Rethinkdb.Rql.Joins.Test do
     ]
 
     lc {table_name, registers} inlist data do
-      r.table(table_name).insert(registers).run!(conn)
+      r.table(table_name).insert(registers).run!
     end
 
-    {:ok, conn: conn, dc: dc, marvel: marvel}
+    {:ok, dc: tb_dc, marvel: tb_marvel}
   end
 
   test "returns the inner product of two sequences", var do
-    {conn, dc, marvel} = {var[:conn], var[:dc], var[:marvel]}
-    result = r.table(marvel).inner_join(r.table(dc), fn marvel_row, dc_row ->
+    {tb_dc, tb_marvel} = {var[:dc], var[:marvel]}
+    result = tb_marvel.inner_join(tb_dc, fn marvel_row, dc_row ->
       marvel_row[:strength].lt(dc_row[:strength])
-    end).run!(conn)
+    end).run!
 
     assert 2 == length(result)
     lc heroes inlist result do
@@ -37,10 +37,10 @@ defmodule Rethinkdb.Rql.Joins.Test do
   end
 
   test "computes a left outer join", var do
-    {conn, dc, marvel} = {var[:conn], var[:dc], var[:marvel]}
-    result = r.table(marvel).outer_join(r.table(dc), fn marvel_row, dc_row ->
+    {tb_dc, tb_marvel} = {var[:dc], var[:marvel]}
+    result = tb_marvel.outer_join(tb_dc, fn marvel_row, dc_row ->
       marvel_row[:strength].lt(dc_row[:strength])
-    end).run!(conn)
+    end).run!
 
     assert 3 == length(result)
     lc heroes inlist result do
@@ -49,36 +49,36 @@ defmodule Rethinkdb.Rql.Joins.Test do
   end
 
   test "join that looks up elements in the right table by primary key", var do
-    {conn, dc, marvel} = {var[:conn], var[:dc], var[:marvel]}
-     query = r.table(dc)
+    {tb_dc, tb_marvel} = {var[:dc], var[:marvel]}
+     query = tb_dc
       .has_fields(:collaborator)
-      .eq_join(:collaborator, r.table(marvel))
+      .eq_join(:collaborator, tb_marvel)
 
-    [heroes] = query.run!(conn)
+    [heroes] = query.run!
     assert "Shazam"         == heroes[:left][:superhero]
     assert "Captain Marvel" == heroes[:right][:superhero]
   end
 
   test "join via eq_join with index", var do
-    {conn, dc, marvel} = {var[:conn], var[:dc], var[:marvel]}
-     r.table(marvel).index_create(:origin).run(conn)
-     query = r.table(dc).eq_join(
-       :superhero, r.table(marvel), index: :origin
+    {tb_dc, tb_marvel} = {var[:dc], var[:marvel]}
+     tb_marvel.index_create(:origin).run
+     query = tb_dc.eq_join(
+       :superhero, tb_marvel, index: :origin
      )
 
-    [heroes] = query.run!(conn)
+    [heroes] = query.run!
     assert "Shazam"         == heroes[:left][:superhero]
     assert "Captain Marvel" == heroes[:right][:superhero]
   end
 
   test "merge left and right", var do
-    {conn, dc, marvel} = {var[:conn], var[:dc], var[:marvel]}
-     query = r.table(dc)
+    {tb_dc, tb_marvel} = {var[:dc], var[:marvel]}
+     query = tb_dc
       .has_fields(:collaborator)
-      .eq_join(:collaborator, r.table(marvel))
+      .eq_join(:collaborator, tb_marvel)
       .zip
 
-    [hero] = query.run!(conn)
+    [hero] = query.run!
     assert "Captain Marvel" == hero[:collaborator]
     assert "Shazam" == hero[:origin]
   end
