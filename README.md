@@ -16,7 +16,7 @@ Add the following to your list of dependencies in mix.exs:
 ## Example
 
 ```elixir
-defmodule Simple.Heros do
+defmodule Simple.Marvel do
   use Rethinkdb
 
   def get(name) do
