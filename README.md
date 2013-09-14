@@ -1,5 +1,7 @@
 # Elixir Rethinkdb Driver
 
+[![wercker status](https://app.wercker.com/status/da850bfed71ba8671f1ce69bd125184f/m "wercker status")](https://app.wercker.com/project/bykey/da850bfed71ba8671f1ce69bd125184f)
+
 This is a prototype of a [RethinkDB](http://www.rethinkdb.com) client driver written in Elixir.
 This driver utilizes Erlang R16B01 and Elixir 0.10.1.
 
