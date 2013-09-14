@@ -1,0 +1,29 @@
+box: nuxlli/elixir@0.0.2
+services:
+    - mies/rethinkdb
+build:
+  steps:
+      - script:
+          name: set env vars
+          code: |
+            export MIX_ENV=test
+            export RETHINKDB_URL="rethinkdb://${WERCKER_RETHINKDB_URL}/elixir_drive_test"
+
+      # Gets the dependencies
+      - script:
+          name: mix get deps
+          code: |
+            cd $WERCKER_SOURCE_DIR
+            mix deps.get
+
+      # Build the project
+      - script:
+          name: mix buil
+          code: |
+            mix compile
+
+      # Test the project
+      - script:
+          name: mix test
+          code: |
+            mix test
