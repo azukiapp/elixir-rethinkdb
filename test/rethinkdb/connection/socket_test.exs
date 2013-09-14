@@ -24,7 +24,8 @@ defmodule Rethinkdb.Connection.Socket.Test do
       socket_opts = [:binary | [packet: :raw, active: false]]
 
       assert is_record(socket, Socket)
-      assert called :gen_tcp.connect('localhost', options.port, socket_opts)
+      host = String.to_char_list!(options.host)
+      assert called :gen_tcp.connect(host, options.port, socket_opts)
       refute socket.close.open?
     end
   end
