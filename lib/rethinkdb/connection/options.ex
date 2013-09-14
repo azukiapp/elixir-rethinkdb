@@ -5,7 +5,7 @@ defmodule Rethinkdb.Connection.Options do
 
   # Record def
   Record.deffunctions(@fields, __ENV__)
-  Record.import __MODULE__, as: :rconn
+  Record.import __MODULE__, as: :ropts
 
   @type t   :: __MODULE__
   @type uri :: String.t
@@ -24,12 +24,28 @@ defmodule Rethinkdb.Connection.Options do
     extract_from_uri(URI.parse(uri))
   end
 
+  @doc """
+  Return a uri representation from a options record.
+
+  ## Example
+
+      iex> Options.new(db: "teste").to_uri
+      "rethinkdb://#{@fields[:host]}:#{@fields[:port]}/test
+  """
+  @spec to_uri(t) :: String.t
+  def to_uri(ropts(db: db, port: port, host: host, authKey: authKey)) do
+    if authKey != nil do
+      authKey = "#{authKey}@"
+    end
+    "rethinkdb://#{authKey}#{host}:#{port}/#{db}"
+  end
+
   # New record from valid uri scheme
   defp extract_from_uri(URI.Info[
     scheme: "rethinkdb", host: host, port: port, userinfo: authKey, path: db
   ]) do
     db = List.last(String.split(db || "", "/"))
-    rconn([
+    ropts([
       host: host,
       port: port || @fields[:port],
       authKey: authKey || @fields[:authKey],

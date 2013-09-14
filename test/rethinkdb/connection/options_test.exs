@@ -21,7 +21,7 @@ defmodule Rethinkdb.Connection.Options.Test do
     assert "auth_key" == options.authKey
 
     default = Options.new
-    options    = Options.new("rethinkdb://remote:28106")
+    options = Options.new("rethinkdb://remote:28106")
     assert default.db == options.db
     assert default.authKey == options.authKey
 
@@ -34,5 +34,11 @@ defmodule Rethinkdb.Connection.Options.Test do
     assert is_binary(msg)
     {:error, msg} = Options.new("http://example.com")
     assert is_binary(msg)
+  end
+
+  test "return a uri representation" do
+    uri  = "rethinkdb://auth_key@remote:28106/rethinkdb_test"
+    opts = Options.new(uri)
+    assert uri == opts.to_uri
   end
 end
