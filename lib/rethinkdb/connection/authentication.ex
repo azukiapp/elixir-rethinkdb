@@ -8,11 +8,11 @@ defmodule Rethinkdb.Connection.Authentication do
 
   @spec auth!(Socket.t, Options.t) :: :ok | no_return
   def auth!(socket,
-    Options[authKey: authKey, timeout: timeout] = options
+    Options[auth_key: auth_key, timeout: timeout] = options
   ) when is_record(socket, Socket) do
 
-    authKey = [@version, <<iolist_size(authKey) :: [size(32), little]>>, authKey]
-    :ok = socket.send!(authKey)
+    auth_key = [@version, <<iolist_size(auth_key) :: [size(32), little]>>, auth_key]
+    :ok = socket.send!(auth_key)
 
     case socket.recv_until_null!(timeout * 1000) do
       "SUCCESS" -> :ok

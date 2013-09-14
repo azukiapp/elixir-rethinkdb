@@ -43,7 +43,7 @@ defmodule Rethinkdb.Connection.Test do
     end
 
     assert_raise RqlDriverError, fn ->
-      Connection.init(options.authKey "foobar")
+      Connection.init(options.auth_key "foobar")
     end
   end
 

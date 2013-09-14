@@ -57,11 +57,13 @@ defmodule Rethinkdb.Rql do
       iex> conn = r.connect(db: "heroes")
   """
   @spec connect(params | url) :: conn
+  def connect, do: connect([])
+
   def connect(opts) when is_record(opts, Options) do
     Connection.connect!(opts)
   end
 
-  def connect(opts // []) do
+  def connect(opts) do
     connect(Options.new(opts))
   end
 

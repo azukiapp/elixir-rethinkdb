@@ -15,7 +15,7 @@ defmodule Rethinkdb.Connection.Authentication.Test do
   end
 
   test "fail in authentication" do
-    options = default_options.authKey "foobar"
+    options = default_options.auth_key "foobar"
     socket  = Socket.connect!(options)
 
     msg = %r/Authentication.*incorrect.*key/

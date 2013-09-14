@@ -7,7 +7,7 @@ defmodule Rethinkdb.Connection.Options.Test do
 
     assert "localhost" == options.host
     assert 28015 == options.port
-    assert ""    == options.authKey
+    assert ""    == options.auth_key
     assert 20    == options.timeout
     assert nil   == options.db
   end
@@ -18,12 +18,12 @@ defmodule Rethinkdb.Connection.Options.Test do
     assert "remote" == options.host
     assert 28106    == options.port
     assert "rethinkdb_test" == options.db
-    assert "auth_key" == options.authKey
+    assert "auth_key" == options.auth_key
 
     default = Options.new
     options = Options.new("rethinkdb://remote:28106")
     assert default.db == options.db
-    assert default.authKey == options.authKey
+    assert default.auth_key == options.auth_key
 
     options = Options.new("rethinkdb://remote")
     assert default.port == options.port
