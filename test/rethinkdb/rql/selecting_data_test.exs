@@ -3,7 +3,7 @@ defmodule Rethinkdb.Rql.SelectingData.Test do
   use Rethinkdb
 
   setup_all do
-    {conn, table_name} = connect("vertigo", primary_key: "superhero")
+    table = table_to_test(table_name = "vertigo", primary_key: "superhero")
     data = [
       [life: 999, superhero: "Lobo", superpower: "Everything",
         abilities: ['super-strength': 10],
@@ -18,46 +18,36 @@ defmodule Rethinkdb.Rql.SelectingData.Test do
         powers: [20, 10]
       ],
     ]
-    table = r.table(table_name)
-    table.insert(data, upsert: true).run!(conn)
-    {:ok, conn: conn, table: table, table_name: table_name }
+    table.insert(data, upsert: true).run!
+    {:ok, table: table, table_name: table_name }
   end
 
   test "select table", var do
-    {conn, name} = {var[:conn], var[:table_name]}
-
-    table = r.table(name).info.run!(conn)
-    assert name == table[:name]
-
-    table = r.db(conn.db).table(name).info.run!(conn)
-    assert name == table[:name]
+    table = r.table(var[:table_name]).info.run!
+    assert var[:table_name] == table[:name]
   end
 
   test "get a document by primary id", var do
-    {conn, table} = {var[:conn], var[:table]}
-    result = table.get("Lobo").run!(conn)
+    result = var[:table].get("Lobo").run!
     assert "Everything" == result[:superpower]
   end
 
   test "get all documents where the given matches the value", var do
-    {conn, table} = {var[:conn], var[:table]}
+    [lobo] = var[:table].getAll("Lobo").run!
+    assert "Lobo" == lobo[:superhero]
 
-    [wolf] = table.getAll("Lobo").run!(conn)
-    assert "Lobo" == wolf[:superhero]
-
-    [wolf, const] = table.getAll(["Lobo", "Constantine"]).run!(conn)
-    assert "Lobo" == wolf[:superhero]
+    [lobo, const] = var[:table].getAll(["Lobo", "Constantine"]).run!
+    assert "Lobo" == lobo[:superhero]
     assert "Constantine" == const[:superhero]
   end
 
   test "get all documents with secundary index", var do
-    {conn, table} = {var[:conn], var[:table]}
     data  = [superhero: "Lobo", superpower: "Everything"]
-    table.index_create("superpower").run(conn)
-    table.insert(data, upsert: true).run!(conn)
+    var[:table].index_create("superpower").run
+    var[:table].insert(data, upsert: true).run!
 
-    [wolf] = table.getAll("Everything", index: :superpower).run!(conn)
-    assert "Lobo" == wolf[:superhero]
+    [lobo] = var[:table].getAll("Everything", index: :superpower).run!
+    assert "Lobo" == lobo[:superhero]
   end
 
   test "not implement between" do
@@ -67,41 +57,36 @@ defmodule Rethinkdb.Rql.SelectingData.Test do
   end
 
   test "filter by key values", var do
-    {conn, table} = {var[:conn], var[:table]}
-    result = table.filter(life: 999).run!(conn)
+    result = var[:table].filter(life: 999).run!
     assert is_list(result)
     assert 2 == length(result)
 
-    result = table.filter(life: 999, superpower: "Everything").run!(conn)
+    result = var[:table].filter(life: 999, superpower: "Everything").run!
     assert 1 == length(result)
   end
 
   test "filter by row value", var do
-    {conn, table} = {var[:conn], var[:table]}
-    [hero] = table.filter(r.row[:life].lt(0)).run!(conn)
+    [hero] = var[:table].filter(r.row[:life].lt(0)).run!
     assert "Constantine" == hero[:superhero]
   end
 
   test "filter by function", var do
-    {conn, table} = {var[:conn], var[:table]}
-    result = table.filter(fn hero ->
+    result = var[:table].filter(fn hero ->
       hero[:abilities].has_fields("super-strength")
-    end).run!(conn)
+    end).run!
     assert is_list(result)
     assert 2 == length(result)
   end
 
   test "filter by nested field", var do
-    {conn, table} = {var[:conn], var[:table]}
-    [hero] = table.filter([abilities: [magic: 100]]).run!(conn)
+    [hero] = var[:table].filter([abilities: [magic: 100]]).run!
     assert "Constantine" == hero[:superhero]
   end
 
   test "filter elements in array", var do
-    {conn, table} = {var[:conn], var[:table]}
     filter = r.row[:powers].filter(fn el ->
       el.eq(10)
     end).count().gt(0)
-    assert 2 == table.filter(filter).count.run!(conn)
+    assert 2 == var[:table].filter(filter).count.run!
   end
 end

@@ -23,26 +23,27 @@ defmodule Rethinkdb.Rql.Test do
     end
   end
 
-  #test "use default connection to execute a query" do
-    #conn = r.connect.repl
-    #assert {:ok, 10} == r.expr(10).run
-    #assert 10 == r.expr(10).run!
-  #end
+  test "use default connection to execute a query" do
+    assert {:ok, 10} == r.expr(10).run
+    assert 10 == r.expr(10).run!
+  end
 
-  test "return a connection with parameters" do
-    conn = r.connect(host: "localhost")
-    assert "localhost" == conn.options.host
+  test "accept uri as parameters in connect" do
+    conn = r.connect(default_options.to_uri)
+    assert default_options == conn.options
     assert conn.open?
     conn.close
+  end
 
-    conn = r.connect("rethinkdb://localhost")
-    assert "localhost" == conn.options.host
+  test "accept options as parameters in connect" do
+    conn = r.connect(default_options)
+    assert default_options == conn.options
     assert conn.open?
     conn.close
   end
 
   test "return a connection record" do
-    conn = r.connect
+    conn = r.connect(default_options)
     assert is_record(conn, Rethinkdb.Connection)
     assert conn.open?
     conn.close

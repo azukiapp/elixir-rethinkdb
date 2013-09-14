@@ -3,7 +3,7 @@ defmodule Rethinkdb.Rql.Transformations.Test do
   use Rethinkdb
 
   setup_all do
-    {conn, table_name} = connect("tf_marvel", primary_key: "superhero")
+    table = table_to_test("tf_marvel", primary_key: "superhero")
     data = [
       [superhero: "Spiderman", combatPower: 9, compassionPower: 10,
         nemesis: [evil_organization: ["oscorp"]],
@@ -17,24 +17,21 @@ defmodule Rethinkdb.Rql.Transformations.Test do
       ],
     ]
 
-    table = r.table(table_name)
-    table.insert(data).run!(conn)
-    {:ok, conn: conn, table: table }
+    table.insert(data).run!
+    {:ok, table: table }
   end
 
   test "transform each element of the sequence", var do
-    {conn, table} = {var[:conn], var[:table]}
-    result = table.map(fn hero ->
+    result = var[:table].map(fn hero ->
       hero[:combatPower].add(hero[:compassionPower].mul(2))
-    end).run!(conn)
+    end).run!
 
     assert Enum.all? result, is_number(&1)
     assert Enum.all? result, &1 > 10
   end
 
   test "takes a sequence of objects and a list of fields", var do
-    {conn, table} = {var[:conn], var[:table]}
-    result = table.with_fields([:superhero, :nemesis]).run!(conn)
+    result = var[:table].with_fields([:superhero, :nemesis]).run!
     assert 2 = length(result)
     lc hero inlist result do
       assert hero[:superhero] != nil
@@ -43,136 +40,123 @@ defmodule Rethinkdb.Rql.Transformations.Test do
   end
 
   test "takes a sequence of objects and a lista of fields filtred", var do
-    {conn, table} = {var[:conn], var[:table]}
     data = HashDict.new(
       nemesis: HashDict.new(evil_organization: ["oscorp"]),
       superhero: "Spiderman"
     )
 
-    query1 = table.with_fields([:superhero], nemesis: [
+    query1 = var[:table].with_fields([:superhero], nemesis: [
       evil_organization: true
     ])
-    query2 = table.with_fields([
+    query2 = var[:table].with_fields([
       :superhero, nemesis: :evil_organization
     ])
-    query3 = table.with_fields(:superhero, nemesis: :evil_organization)
-    assert [data] == query1.run!(conn)
-    assert [data] == query2.run!(conn)
-    assert [data] == query3.run!(conn)
+    query3 = var[:table].with_fields(:superhero, nemesis: :evil_organization)
+    assert [data] == query1.run!
+    assert [data] == query2.run!
+    assert [data] == query3.run!
   end
 
   test "flattens a sequence of arrays and return a single sequence", var do
-    {conn, table} = {var[:conn], var[:table]}
-    result = table
+    result = var[:table]
       .has_fields(:defeatedMonsters)
       .order_by(:superhero)
       .concat_map(fn hero -> hero[:defeatedMonsters] end)
-      .run!(conn)
+      .run!
     assert ["wolverine", "rhino"] == result
   end
 
   test "order documents by fields", var do
-    {conn, table} = {var[:conn], var[:table]}
-    result = table.order_by([:combatPower, :compassionPower]).run!(conn)
+    result = var[:table].order_by([:combatPower, :compassionPower]).run!
     assert "Captain Marvel" == Enum.first(result)[:superhero]
     assert "Hulk" == List.last(result)[:superhero]
   end
 
   test "order documents by index", var do
-    {conn, table} = {var[:conn], var[:table]}
-    table.index_create(:compassionPower).run(conn)
-    result = table.order_by(:combatPower, index: :compassionPower).run!(conn)
+    var[:table].index_create(:compassionPower).run
+    result = var[:table].order_by(:combatPower, index: :compassionPower).run!
     assert "Hulk" == Enum.first(result)[:superhero]
     assert "Spiderman" == List.last(result)[:superhero]
   end
 
   test "order desc only by index", var do
-    {conn, table} = {var[:conn], var[:table]}
-    table.index_create(:combatPower).run(conn)
-    result = table.order_by(index: r.desc(:combatPower)).run!(conn)
+    var[:table].index_create(:combatPower).run
+    result = var[:table].order_by(index: r.desc(:combatPower)).run!
     assert "Hulk" == Enum.first(result)[:superhero]
   end
 
   test "order desc and asc", var do
-    {conn, table} = {var[:conn], var[:table]}
-    result = table.order_by(
+    result = var[:table].order_by(
       [r.desc(:combatPower), r.asc(:compassionPower)
-    ]).run!(conn)
+    ]).run!
 
     assert "Hulk" == Enum.first(result)[:superhero]
     assert "Spiderman" == List.last(result)[:superhero]
   end
 
   test "order by a function", var do
-    {conn, table} = {var[:conn], var[:table]}
     func = fn doc ->
       doc[:combatPower].sub(doc[:compassionPower].mul(0.2))
     end
 
-    result = table.order_by(func).run!(conn)
+    result = var[:table].order_by(func).run!
     assert "Spiderman" == Enum.first(result)[:superhero]
     assert "Hulk" == List.last(result)[:superhero]
 
-    result = table.order_by(r.desc(func)).run!(conn)
+    result = var[:table].order_by(r.desc(func)).run!
     assert "Hulk" == Enum.first(result)[:superhero]
     assert "Spiderman" == List.last(result)[:superhero]
 
-    result = table.order_by(r.asc(func)).run!(conn)
+    result = var[:table].order_by(r.asc(func)).run!
     assert "Spiderman" == Enum.first(result)[:superhero]
     assert "Hulk" == List.last(result)[:superhero]
   end
 
   test "skip a number of elements", var do
-    {conn, table} = {var[:conn], var[:table]}
-    [hero] = table.order_by(index: :superhero).skip(2).run!(conn)
+    [hero] = var[:table].order_by(index: :superhero).skip(2).run!
     assert "Spiderman" == hero[:superhero]
   end
 
   test "end sequence after given number", var do
-    {conn, table} = {var[:conn], var[:table]}
-    [hero] = table.order_by(index: :superhero).limit(1).run!(conn)
+    [hero] = var[:table].order_by(index: :superhero).limit(1).run!
     assert "Captain Marvel" == hero[:superhero]
   end
 
   test "Trim the sequence to within the bounds provided", var do
-    {conn, table} = {var[:conn], var[:table]}
-    [hero] = table.order_by(index: :superhero)[1..2].run!(conn)
+    [hero] = var[:table].order_by(index: :superhero)[1..2].run!
     assert "Hulk" == hero[:superhero]
 
-    [hero] = table.order_by(index: :superhero)[2..-1].run!(conn)
+    [hero] = var[:table].order_by(index: :superhero)[2..-1].run!
     assert "Spiderman" == hero[:superhero]
   end
 
   test "get the nth element of a sequence", var do
-    {conn, table} = {var[:conn], var[:table]}
-    assert 2 == r.expr([1, 2, 3])[1].run!(conn)
-    assert "Captain Marvel" == table.order_by(index: :superhero)[0].run!(conn)[:superhero]
-    assert "Spiderman"      == table.order_by(index: :superhero)[-1].run!(conn)[:superhero]
+    assert 2 == r.expr([1, 2, 3])[1].run!
+    assert "Captain Marvel" ==
+      var[:table].order_by(index: :superhero)[0].run![:superhero]
+    assert "Spiderman"      ==
+      var[:table].order_by(index: :superhero)[-1].run![:superhero]
   end
 
-  test "get the indexes of an element in a sequence", var do
-    {conn, _table} = {var[:conn], var[:table]}
-    assert [2] == r.expr(["a", "b", "c"]).indexes_of("c").run!(conn)
+  test "get the indexes of an element in a sequence" do
+    assert [2] == r.expr(["a", "b", "c"]).indexes_of("c").run!
   end
 
   test "test if a sequence is empty", var do
-    {conn, table} = {var[:conn], var[:table]}
-    refute table.is_empty?.run!(conn)
-    assert table.filter(any: true).is_empty?.run!(conn)
-    assert r.expr([]).is_empty?.run!(conn)
+    refute var[:table].is_empty?.run!
+    assert var[:table].filter(any: true).is_empty?.run!
+    assert r.expr([]).is_empty?.run!
   end
 
   test "concatenate two sequences", var do
-    {conn, table} = {var[:conn], var[:table]}
-    query = table.union([[superhero: "Gambit"]])
-    assert 4 == query.count.run!(conn)
-    assert "Gambit" == query[-1].run!(conn)[:superhero]
+    query = var[:table].union([[superhero: "Gambit"]])
+    assert 4 == query.count.run!
+    assert "Gambit" == query[-1].run![:superhero]
   end
 
   test "select a random number of documents", var do
-    {conn, table} = {var[:conn], var[:table]}
-    [hero|_] = result = table.sample(2).run!(conn)
-    assert 2 = length(r.expr([1, 2, 3, 4]).sample(2).run!(conn))
+    [hero|_] = result = var[:table].sample(2).run!
+    assert 2 = length(r.expr([1, 2, 3, 4]).sample(2).run!)
     assert 2 = length(result)
     assert 0 < size(hero[:superhero])
   end

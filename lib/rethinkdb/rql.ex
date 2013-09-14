@@ -1,5 +1,6 @@
 defmodule Rethinkdb.Rql do
   alias Rethinkdb.Connection
+  alias Rethinkdb.Connection.Options
 
   # Geral record
   defrecordp :rql, __MODULE__, terms: []
@@ -7,7 +8,7 @@ defmodule Rethinkdb.Rql do
   @type t      :: __MODULE__
   @type conn   :: Rethinkdb.Connection
   @type url    :: String.t
-  @type params :: Keyword.t
+  @type params :: Keyword.t | Options.t
   @type term   :: Term.t
   @type name   :: String.t | atom
 
@@ -56,9 +57,12 @@ defmodule Rethinkdb.Rql do
       iex> conn = r.connect(db: "heroes")
   """
   @spec connect(params | url) :: conn
-  def connect(opts // []) do
-    opts = Connection.Options.new(opts)
+  def connect(opts) when is_record(opts, Options) do
     Connection.connect!(opts)
+  end
+
+  def connect(opts // []) do
+    connect(Options.new(opts))
   end
 
   @doc """

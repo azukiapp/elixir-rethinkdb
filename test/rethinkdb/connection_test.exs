@@ -11,7 +11,7 @@ defmodule Rethinkdb.Connection.Test do
 
   alias QL2.Query
 
-  def options, do: Options.new
+  def options, do: default_options
 
   def mock_socket(mocks // []) do
     Dict.merge([
@@ -26,7 +26,7 @@ defmodule Rethinkdb.Connection.Test do
 
   test "stop if fail in connect" do
     assert {:stop, "connection refused"} ==
-      Connection.init(Options.new(port: 1))
+      Connection.init(options.port 1)
   end
 
   test "links the current process to the socket" do
@@ -43,7 +43,7 @@ defmodule Rethinkdb.Connection.Test do
     end
 
     assert_raise RqlDriverError, fn ->
-      Connection.init(Options.new(authKey: "foobar"))
+      Connection.init(options.authKey "foobar")
     end
   end
 

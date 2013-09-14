@@ -2,25 +2,23 @@ defmodule Rethinkdb.Rql.ManipulatingDB.Test do
   use Rethinkdb.Case
   use Rethinkdb
 
-  setup_all do
-    {:ok, conn: r.connect, db: "#{dbns}_heroes"}
-  end
+  def db, do: "elixir_drive_test_heroes"
 
-  test "drop database", var do
-    r.db_drop(var[:db]).run(var[:conn])
-    assert_raise Rethinkdb.RqlRuntimeError, %r/Database `#{var[:db]}`/, fn ->
-      r.db(var[:db]).info.run!(var[:conn])
+  test "drop database" do
+    r.db_drop(db).run
+    assert_raise Rethinkdb.RqlRuntimeError, %r/Database `#{db}`/, fn ->
+      r.db(db).info.run!
     end
   end
 
-  test "create database", var do
-    r.db_drop(var[:db]).run(var[:conn])
-    assert HashDict.new(created: 1) == r.db_create(var[:db]).run!(var[:conn])
+  test "create database" do
+    r.db_drop(db).run
+    assert HashDict.new(created: 1) == r.db_create(db).run!
   end
 
-  test "list databases", var do
-    r.db_drop(var[:db]).run(var[:conn])
-    r.db_create(var[:db]).run(var[:conn])
-    assert var[:db] in r.db_list.run!(var[:conn])
+  test "list databases" do
+    r.db_drop(db).run
+    r.db_create(db).run
+    assert db in r.db_list.run!
   end
 end

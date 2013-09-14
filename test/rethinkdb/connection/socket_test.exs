@@ -4,7 +4,7 @@ defmodule Rethinkdb.Connection.Socket.Test do
   alias Rethinkdb.Connection.Socket
   alias Rethinkdb.Connection.Options
 
-  def options, do: Options.new
+  def options, do: default_options
 
   test "open a socket with a opts" do
     socket = Socket.connect!(options)

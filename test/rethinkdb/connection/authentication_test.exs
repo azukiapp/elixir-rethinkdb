@@ -5,7 +5,7 @@ defmodule Rethinkdb.Connection.Authentication.Test do
   alias Rethinkdb.Connection.Authentication
 
   test "send authetication to rethinkdb" do
-    options = Options.new
+    options = default_options
     socket  = Socket.connect!(options)
 
     with_mock Socket, [:passthrough], [] do
@@ -15,7 +15,7 @@ defmodule Rethinkdb.Connection.Authentication.Test do
   end
 
   test "fail in authentication" do
-    options = Options.new(authKey: "foobar")
+    options = default_options.authKey "foobar"
     socket  = Socket.connect!(options)
 
     msg = %r/Authentication.*incorrect.*key/
