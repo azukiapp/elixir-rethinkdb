@@ -18,7 +18,7 @@ defmodule Rethinkdb.Case do
   end
 
   def default_connect do
-    options = default_options
+    options = default_options.timeout 100
     r.connect(options).repl
     case r.db(options.db).info().run do
       {:ok, _} -> :ok
