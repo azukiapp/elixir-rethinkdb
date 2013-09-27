@@ -12,12 +12,7 @@ defmodule Rethinkdb.Rql.Build do
       end
 
       defp build_term_datum(value) do
-        try do
-          Term.new(type: :'DATUM', datum: Datum.from_value(value))
-        rescue
-          CaseClauseError ->
-            IO.inspect(value)
-        end
+        Term.new(type: :'DATUM', datum: Datum.from_value(value))
       end
 
       defp build_terms(term(type: :'EXPR', args: [value]), _left) do
