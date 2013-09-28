@@ -161,7 +161,8 @@ defmodule Rethinkdb.Connection do
       options: Options[db: db, timeout: timeout]
     ] = state) do
 
-    response = send_and_recv(Query.new_start(term, db, token), socket, timeout)
+    query = Query.new_start(term, db, token)
+    response = send_and_recv(query, socket, timeout)
     { :reply, response, state.next_token(token + 1) }
   end
 
@@ -178,8 +179,8 @@ defmodule Rethinkdb.Connection do
     socket.send!(query.encode_to_send)
     Response.decode(recv(socket, timeout)).value
   rescue
-    x in [Socket.Error] ->
-      {:error, x.message}
+    x in [Socket.Error]  -> {:error, x.message}
+    _ -> {:error, "Error to send query: #{inspect(query.query)}"}
   end
 
   defp recv(socket, timeout) do

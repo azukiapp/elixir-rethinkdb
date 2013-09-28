@@ -116,6 +116,30 @@ defmodule Rethinkdb.Connection.Test do
     end
   end
 
+  test "rescue from socket expection" do
+    conn = Connection.connect!(options)
+    mock = [
+      send!: fn _, _ -> raise Socket.Error, msg: :msg end
+    ]
+    mock_with_raise Socket, mock do
+      assert {:error, "msg"} == conn.run(r.expr(1).build)
+    end
+    conn.close
+  end
+
+  test "does not break the server to send a query" do
+    conn = Connection.connect!(options)
+    mock = [ send!: fn _, _ -> raise "any" end ]
+    msgs = %r/Error to send query: QL2\.Term\[.*\]/
+    mock_with_raise Socket, mock do
+      assert_raise RqlDriverError, msgs, fn ->
+        conn.run!(r.expr([1]).build)
+      end
+    end
+    assert [1, 2, 3] == conn.run!(r.expr([1, 2, 3]).build)
+    conn.close
+  end
+
   test "return a database error" do
     conn = Connection.connect!(options)
 

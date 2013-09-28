@@ -27,6 +27,19 @@ defmodule Rethinkdb.Case do
     end
   end
 
+  # TODO: Fix meck bug in expectation with raise error
+  defmacro mock_with_raise(mock_module, opts // [], mocks, test) do
+    quote do
+      :meck.new(unquote(mock_module), unquote(opts))
+      Mock._install_mock(unquote(mock_module), unquote(mocks))
+      try do
+        unquote(test)
+      after
+        :meck.unload(unquote(mock_module))
+      end
+    end
+  end
+
   defmacro save_repl(do: block) do
     quote do
       __conn = Rethinkdb.Connection.get_repl
