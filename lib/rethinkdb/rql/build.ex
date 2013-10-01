@@ -13,6 +13,8 @@ defmodule Rethinkdb.Rql.Build do
 
       defp build_term_datum(value) do
         Term.new(type: :'DATUM', datum: Datum.from_value(value))
+      rescue
+        x -> raise "Error to create Datum from: #{inspect(value)}"
       end
 
       defp build_terms(term(type: :'EXPR', args: [value]), _left) do
