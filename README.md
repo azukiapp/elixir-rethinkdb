@@ -76,6 +76,8 @@ iex> table.map(fn hero ->
   hero[:name].add(" ").add(hero[:age].coerce_to("string"))
 end).run!
 ["batman 30"]
+iex> table.map(rr.row[:age].add(10)).run!
+[40.0]
 ```
 
 ## Overview
