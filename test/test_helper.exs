@@ -11,6 +11,11 @@ defmodule Rethinkdb.Case do
     end
   end
 
+  def default_timeout do
+    System.get_env("WERCKER") && {:ok, 8000} ||
+    :application.get_env(Mix.project[:app], :timeout)
+  end
+
   def default_options do
     env_url = System.get_env("RETHINKDB_URL")
     {:ok, default} = :application.get_env(Mix.project[:app], :rethinkdb_uri)
@@ -18,7 +23,8 @@ defmodule Rethinkdb.Case do
   end
 
   def default_connect do
-    options = default_options.timeout 500
+    {:ok, timeout} = default_timeout
+    options = default_options.timeout(timeout)
     r.connect(options).repl
     case r.db(options.db).info().run do
       {:ok, _} -> :ok

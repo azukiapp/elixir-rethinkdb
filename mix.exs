@@ -13,7 +13,7 @@ defmodule Rethinkdb.Mixfile do
     [
       mod: { Rethinkdb.App, [] },
       applications: [],
-      env: Keyword.merge([{:timeout, 30 * 1000}], env(Mix.env))
+      env: Keyword.merge([{:timeout, 30}], env(Mix.env))
     ]
   end
 
