@@ -3,12 +3,12 @@ defmodule Rethinkdb.Rql.Transformations do
 
   defmacro __using__(_opts) do
     quote do
-      def map(rql() = predicate, rql() = query) do
-        map(fn _ -> predicate end, query)
+      def map(func, rql() = query) when is_function(func) do
+        new_term(:'MAP', [func(func)], query)
       end
 
-      def map(func, rql() = query) do
-        new_term(:'MAP', [func(func)], query)
+      def map(predicate, rql() = query) do
+        map(fn _ -> predicate end, query)
       end
 
       def with_fields(fields, options // [], rql() = query) do

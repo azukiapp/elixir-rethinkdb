@@ -30,6 +30,23 @@ defmodule Rethinkdb.Rql.Transformations.Test do
     assert Enum.all? result, &1 > 10
   end
 
+  test "transform each elements with simple predicate", var do
+    predicate = r.row[:combatPower].add(r.row[:compassionPower].mul(2))
+    result = var[:table].map(predicate).run!
+    assert Enum.all? result, is_number(&1)
+    assert Enum.all? result, &1 > 10
+  end
+
+  test "transform each elements with complex predicate", var do
+    predicate = [r.row[:combatPower], r.row[:combatPower]]
+    result = var[:table].map(predicate).run!
+    assert Enum.all? result, fn [x, y] -> x == y end
+
+    predicate = [cp: r.row[:combatPower], combatPower: r.row["combatPower"]]
+    result = var[:table].map(predicate).run!
+    assert Enum.all? result, fn obj -> obj[:combatPower] == obj[:cp] end
+  end
+
   test "takes a sequence of objects and a list of fields", var do
     result = var[:table].with_fields([:superhero, :nemesis]).run!
     assert 2 = length(result)

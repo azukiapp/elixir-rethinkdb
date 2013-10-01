@@ -45,7 +45,8 @@ defmodule Rethinkdb.Rql.TermsConstructor do
         func_args  = lc n inlist arg_count, do: var(n)
 
         args = case apply(func, func_args) do
-          [{_, _}|_] = obj -> [new_term(:'MAKE_OBJ', [], obj)]
+          [{key, _}|_] = obj when key != __MODULE__ -> [make_obj(obj)]
+          array when is_list(array) -> [make_array(array)]
           rql() = query -> [query]
         end
 
