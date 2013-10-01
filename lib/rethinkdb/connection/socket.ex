@@ -8,12 +8,15 @@ defmodule Rethinkdb.Connection.Socket do
     @type t :: Error.t
 
     def message(Error[code: code, msg: nil]) do
-      to_string(:inet.format_error(code))
+      "(#{code}) #{unix_error(code)}"
     end
 
     def message(Error[msg: msg]) do
       to_string(msg)
     end
+
+    defp unix_error(:timeout), do: "timeout recv"
+    defp unix_error(code), do: :inet.format_error(code)
   end
 
   # Open connect in passive mode

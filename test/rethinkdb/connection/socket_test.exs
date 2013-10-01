@@ -13,7 +13,7 @@ defmodule Rethinkdb.Connection.Socket.Test do
   end
 
   test "raise a Error to connection invalid" do
-    assert_raise Socket.Error, "connection refused", fn ->
+    assert_raise Socket.Error, "(econnrefused) connection refused", fn ->
       Socket.connect!(Options.new(port: 1))
     end
   end
@@ -85,7 +85,7 @@ defmodule Rethinkdb.Connection.Socket.Test do
       assert called :inet.setopts(:_, [ active: true ])
     end
 
-    assert_raise Socket.Error, "invalid argument", fn ->
+    assert_raise Socket.Error, "(einval) invalid argument", fn ->
       Socket.connect!(options).close.active!
     end
   end
@@ -97,16 +97,16 @@ defmodule Rethinkdb.Connection.Socket.Test do
       assert called :inet.setopts(:_, [ active: :once ])
     end
 
-    assert_raise Socket.Error, "invalid argument", fn ->
+    assert_raise Socket.Error, "(einval) invalid argument", fn ->
       Socket.connect!(options).close.active!(:once)
     end
   end
 
   test "aception only [true, :once] modes in active!" do
-    assert_raise Socket.Error, "invalid argument", fn ->
+    assert_raise Socket.Error, "(einval) invalid argument", fn ->
       Socket.connect!(options).active!(1)
     end
-    assert_raise Socket.Error, "invalid argument", fn ->
+    assert_raise Socket.Error, "(einval) invalid argument", fn ->
       Socket.connect!(options).active!(:twoce)
     end
   end

@@ -25,7 +25,7 @@ defmodule Rethinkdb.Connection.Test do
   end
 
   test "stop if fail in connect" do
-    assert {:stop, "connection refused"} ==
+    assert {:stop, "(econnrefused) connection refused"} ==
       Connection.init(options.port 1)
   end
 
