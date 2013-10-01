@@ -188,4 +188,12 @@ defmodule Rethinkdb.Connection.Test do
       assert called Socket.recv!(:_, options.timeout * 1000, :_)
     end
   end
+
+  test "don't clouse connection with a timeout" do
+    conn = Connection.connect!(options.timeout 3)
+    assert_raise RqlDriverError, "(timeout) timeout recv", fn ->
+      r.js("while(true) {}", timeout: 4).run!(conn)
+    end
+    conn.close
+  end
 end
