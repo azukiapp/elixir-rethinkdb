@@ -8,7 +8,7 @@ defmodule Rethinkdb.Rql.Build do
       # Build a rql terms in a ql2 terms
       @doc false
       def build(rql(terms: terms)) do
-        Enum.reduce terms, nil, build_terms(&1, &2)
+        Enum.reduce terms, nil, &build_terms(&1, &2)
       end
 
       defp build_term_datum(value) do

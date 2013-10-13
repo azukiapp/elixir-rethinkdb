@@ -1,4 +1,4 @@
-box: nuxlli/elixir@0.0.2
+box: nuxlli/elixir@0.0.3
 services:
     - mies/rethinkdb
 build:
