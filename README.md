@@ -1,5 +1,16 @@
 # Elixir Rethinkdb Driver
 
+Unfortunately this driver is no longer maintained, and we'd recommend to use https://github.com/hamiltop/exrethinkdb
+
+The reasons for this:
+
+   - It was written for `Elixir 0.10.2` using the Records system that has become obsolete in the final version` 1.0` of the language;
+   - To support the communication was used Google Protocol Buffer through the library https://github.com/azukiapp/elixir-protobuf, which also is deprecated;
+   - The latest version of Rethinkdb makes use of JSON in communication;
+   - The Azuki is primarily involved with http://azk.io project, so a little time has left over for our work with Elixir. : /
+
+---
+
 [![wercker status](https://app.wercker.com/status/da850bfed71ba8671f1ce69bd125184f/m "wercker status")](https://app.wercker.com/project/bykey/da850bfed71ba8671f1ce69bd125184f)
 
 This is a prototype of a [RethinkDB](http://www.rethinkdb.com) client driver written in Elixir.
